@@ -1,15 +1,14 @@
 import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
-import {JobOffer, JobOfferExcelRow, jobOffersService} from "../services/job-offers-service";
+import {JobOffer, jobOffersService} from "../services/job-offers-service";
 import {Button} from "primereact/button";
 import {Dialog} from "primereact/dialog";
 import {Technologies} from "./Technologies";
 import {JobOfferTechnologies} from "./JobOfferTechnologies";
-import {technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
+import {Required, technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
 import {Utils} from "../utils";
 import {ExcelData, ExcelRow} from "../services/excel-service";
-import {DeveloperTechnology, DeveloperTechnologyExcelRow, Score} from "../services/developers-service";
 
 interface JobOffersProps extends DefaultProps {
     extendable: boolean;
@@ -122,11 +121,11 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
                         for(let tech of jobOffer.technologies){
                             if(tech.key === technology.key){
-                                return 'YES';
+                                return Required.YES;
                             }
                         }
 
-                        return 'NO';
+                        return Required.NO;
 
                     })()
                 }
@@ -158,20 +157,28 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
     }
 
-    //TODO make import each job offer separately as separate TAB in sheet!
     private prepareRowsToImport = (excelData: ExcelData): Array<TableRow> => {
 
         let rows: Array<JobOffer> = [];
         for(let row of excelData.importedRows){
 
             let jobOffer: JobOffer = {
-                name: row['name'],
-                technologies: row['technologies'] ? row['technologies'].split(';').map((technology: string) => {
-                    return {
-                        category: technology.split('/')[0],
-                        name: technology.split('/')[1]
-                    }
-                }) : []
+                name: row['sheet'],
+                technologies: row['rows'] ? row['rows'].map((technology: TechnologyExcelRow) => {
+
+                        if(technology.required === Required.YES){
+
+                            return {
+                                category: technology.category,
+                                name: technology.name,
+                                required: technology.required
+                            }
+
+                        }
+
+                        return null;
+
+                }).filter((t) => { return t !== null; }) : []
             };
 
             jobOffer.technologies = technologiesService.regenerateKeys(jobOffer.technologies);
@@ -182,14 +189,20 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
         }
 
         return jobOffersService.regenerateKeys(rows);
+
     }
 
     private prepareSingleRowToExport = (item: TableRow): Array<ExcelRow> => {
-        return [];
-    }
 
-    private prepareSingleRowToImport = (excelData: ExcelData): TableRow => {
-        return null;
+        let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.jobOffers);
+
+        for(let row of rows){
+            if(row.sheet === item['name']){
+                return [row];
+            }
+        }
+
+        return [];
     }
 
     private customTemplates: Record<string, ((row: TableRow) => JSX.Element)> = {
@@ -213,9 +226,9 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
             <Table name="job-offers" rows={this.state.jobOffers} cols={this.cols} extendable={this.props.extendable}
                    onDataUpdate={this.onDataUpdate} customTemplates={this.customTemplates}
                    prepareRowsToExport={this.prepareRowsToExport} prepareRowsToImport={this.prepareRowsToImport}
-                   prepareSingleRowToExport={this.prepareSingleRowToExport} prepareSingleRowToImport={this.prepareSingleRowToImport}/>
+                   prepareSingleRowToExport={this.prepareSingleRowToExport}/>
 
-            <Dialog visible={this.state.showChooseTechnologyDialog} style={{width: '800px'}} header="Selecting" modal className="p-fluid" footer={this.chooseTechnologyDialogFooter} onHide={this.onHideChooseTechnologyDialog}>
+            <Dialog visible={this.state.showChooseTechnologyDialog} style={{width: '800px'}} header="Choosing technologies" modal className="p-fluid" footer={this.chooseTechnologyDialogFooter} onHide={this.onHideChooseTechnologyDialog}>
                 <JobOfferTechnologies onSelect={this.onTechnologiesSelect} selectedTechnologies={this.state.row ? this.state.row.technologies : []}/>
             </Dialog>
         </>;

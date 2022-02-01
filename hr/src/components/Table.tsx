@@ -34,13 +34,13 @@ export interface TableRow {
 interface TableProps extends DefaultProps {
     name: string;
     extendable: boolean;
+    actions: boolean;
     rows: Array<TableRow>;
     cols: Array<TableColumn>;
     customTemplates: Record<string, ((row: TableRow) => JSX.Element)>;
     onDataUpdate: (items: Array<TableRow>) => void;
     prepareRowsToImport: (excelData: ExcelData) => Array<TableRow>;
     prepareRowsToExport: (items: Array<TableRow>) => Array<ExcelRow>;
-    prepareSingleRowToImport: (excelData: ExcelData) => TableRow;
     prepareSingleRowToExport: (item: TableRow) => Array<ExcelRow>;
 }
 
@@ -61,13 +61,13 @@ export class Table extends State<TableProps, TableState> {
         rows: [],
         cols: [],
         extendable: false,
+        actions: true,
         customTemplates: {},
         onDataUpdate: () => {
         },
         prepareRowsToExport: null,
         prepareRowsToImport: null,
-        prepareSingleRowToExport: null,
-        prepareSingleRowToImport: null
+        prepareSingleRowToExport: null
     }
     state: TableState = {
         showEditDialog: false,
@@ -98,19 +98,18 @@ export class Table extends State<TableProps, TableState> {
         excelService.exportExcel(this.props.name, this.props.prepareRowsToExport ? this.props.prepareRowsToExport(this.state.rows) : this.state.rows);
     }
 
-    private importExcel = async (e): Promise<void> => {
-        this.setSingle('rows', await excelService.importExcel(e, this.props.prepareRowsToImport));
+    private importExcel = async (e: FileUploadHandlerParam): Promise<void> => {
+        this.mergeImportedRows(await excelService.importExcel(e, this.props.prepareRowsToImport));
         this.props.onDataUpdate(this.state.rows);
+        e.options.clear();
     }
 
+    private mergeImportedRows(rows: Array<TableRow>): void {
+        this.setSingle('rows', Utils.uniqBy(this.state.rows.concat(rows), 'key'));
+    }
 
-    private exportSingleRowExcel(row: TableRow) : void {
+    private exportSingleRowExcel(row: TableRow): void {
         excelService.exportSingleExcel(this.props.name, this.props.prepareSingleRowToExport ? this.props.prepareSingleRowToExport(row) : row);
-    }
-
-    private async importSingleRowExcel(e: FileUploadHandlerParam): Promise<void> {
-        this.state.rows.push(await excelService.importSingleExcel(e, this.props.prepareSingleRowToImport));
-        this.props.onDataUpdate(this.state.rows);
     }
 
     render(): JSX.Element {
@@ -118,13 +117,12 @@ export class Table extends State<TableProps, TableState> {
         return <div>
 
             <div className="flex card mb-2">
-                <Button type="button" className="p-button-primary" icon="pi pi-plus" label="Add" onClick={this.openEditDialog}/>
-                {this.props.prepareSingleRowToImport ?
-                    <FileUpload chooseOptions={{label: 'Import single row', icon: 'pi pi-file-excel', className: 'p-button-primary ml-2'}} mode="basic" name="excel[]" auto
-                                customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={(e) => this.importSingleRowExcel(e)}/> :''}
-                <FileUpload chooseOptions={{label: 'Import all', icon: 'pi pi-file-excel', className: 'p-button-primary ml-2'}} mode="basic" name="excel[]" auto
-                            customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/>
-                <Button type="button" className="p-button-primary ml-2" label="Export all" icon="pi pi-file-excel" onClick={this.exportExcel}/>
+                {this.props.extendable ?
+                <Button type="button" className="p-button-primary" icon="pi pi-plus" label="Add" onClick={this.openEditDialog}/> : ''}
+                {this.props.prepareRowsToImport ?
+                <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
+                            customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/> : ''}
+                {this.props.prepareRowsToExport ? <Button type="button" className="p-button-primary ml-2" label="Export" icon="pi pi-file-excel" onClick={this.exportExcel}/> : ''}
             </div>
 
             <div className="card">
@@ -183,10 +181,15 @@ export class Table extends State<TableProps, TableState> {
     }
 
     private actionsTemplate = (row: TableRow): JSX.Element => {
+
+        if(!this.props.actions){
+            return <></>
+        }
+
         return <div className="flex">
             <Button type="button" icon="pi pi-pencil" className="p-button-primary mr-1" onClick={this.openEditDialog.bind(this, null, row)}/>
-            <Button type="button" icon="pi pi-trash" className="p-button-primary mr-1"  onClick={this.openRemoveDialog.bind(this, null, row)}/>
-                {this.props.prepareSingleRowToExport ? <Button type="button" icon="pi pi-file-excel" className="p-button-primary" onClick={(e) => this.exportSingleRowExcel(row)}/> : ''}
+            <Button type="button" icon="pi pi-trash" className="p-button-primary mr-1" onClick={this.openRemoveDialog.bind(this, null, row)}/>
+            {this.props.prepareSingleRowToExport ? <Button type="button" icon="pi pi-file-excel" className="p-button-primary" onClick={(e) => this.exportSingleRowExcel(row)}/> : ''}
 
         </div>;
     }
@@ -205,7 +208,9 @@ export class Table extends State<TableProps, TableState> {
 
         let columns: Array<JSX.Element> = [];
 
-        columns.push(<Column key={-2} field="actions" header="Actions" body={this.actionsTemplate}/>);
+        if(this.props.actions){
+            columns.push(<Column key={-2} field="actions" header="Actions" body={this.actionsTemplate}/>);
+        }
 
         columns = columns.concat(this.props.cols.map((col: TableColumn, index: number) => {
             return <Column key={index} field={col.field} header={col.header} sortable={col.sortable} body={this.getBodyTemplate(col)}/>
@@ -249,10 +254,6 @@ export class Table extends State<TableProps, TableState> {
 
     private onHideEditDialog = (): void => {
         this.setSingle('showEditDialog', false);
-    }
-
-    private onSubmitChooseTechnology = (): void => {
-        this.props.onDataUpdate(Utils.copy(this.state.rows));
     }
 
     private onSubmitEdit = (): void => {

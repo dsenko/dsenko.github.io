@@ -1,10 +1,10 @@
 export class Utils {
 
-     static copy(obj: any) : any {
+    static copy(obj: any): any {
         return JSON.parse(JSON.stringify(obj));
     }
 
-    static removeFromArray(arr: Array<any>, item: any) : void {
+    static removeFromArray(arr: Array<any>, item: any): void {
         arr.splice(arr.indexOf(item), 1);
     }
 
@@ -15,23 +15,23 @@ export class Utils {
         }, {})
     }
 
-    static replaceInArray(arr: Array<any>, item: any, key: string) : Array<any> {
+    static replaceInArray(arr: Array<any>, item: any, key: string): Array<any> {
 
-         for(let i = 0; i < arr.length; i++){
+        for (let i = 0; i < arr.length; i++) {
 
-             if(arr[i][key] === item.key){
-                 arr[i] = item;
-                 break;
-             }
+            if (arr[i][key] === item.key) {
+                arr[i] = item;
+                break;
+            }
 
-         }
+        }
 
-         return arr;
+        return arr;
 
     }
 
 
-     static sameAs(obj1: any, obj2: any): boolean {
+    static sameAs(obj1: any, obj2: any): boolean {
 
         if (obj1 === null && obj2 === null) {
             return true;
@@ -42,6 +42,23 @@ export class Utils {
         }
 
         return JSON.stringify(obj1) === JSON.stringify(obj2);
+    }
+
+    static uniqBy(arr: Array<any>, key: string): Array<any> {
+
+        let seen: Record<string, boolean> = {};
+
+        return arr.filter(function (item) {
+
+            if (seen[item[key]] === true) {
+                return false;
+            }
+
+            seen[item[key]] = true;
+            return true;
+
+        });
+
     }
 
 }

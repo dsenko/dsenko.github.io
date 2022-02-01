@@ -132,7 +132,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
                         return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
                             <div className="flex justify-content-center align-items-center">
                                 <div className="mr-2">{label}</div>
-                                <Dropdown value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
+                                <Dropdown className={technology.score !== undefined && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
                             </div>
                         </div>
 

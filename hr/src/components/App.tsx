@@ -10,6 +10,7 @@ import {TabMenu} from "primereact/tabmenu";
 import {DefaultProps, DefaultState, State} from "../state";
 import { JobOffers } from './JobOffers';
 import {Developers} from "./Developers";
+import {Scoring} from "./Scoring";
 
 interface AppState extends DefaultState {
     activeMenuIndex: number;
@@ -18,6 +19,7 @@ interface AppState extends DefaultState {
 export class App extends State<DefaultProps, AppState> {
 
     private menuItems: Array<MenuItem> = [
+        {label: 'Scoring'},
         {label: 'Developers'},
         {label: 'Job offers'},
         {label: 'Technologies'}
@@ -34,9 +36,10 @@ export class App extends State<DefaultProps, AppState> {
     private renderContent() : JSX.Element {
 
         switch (this.state.activeMenuIndex){
-            case 0: return <Developers extendable={true}/>;
-            case 1: return <JobOffers extendable={true}/>;
-            case 2: return <Technologies extendable={true}/>;
+            case 0: return <Scoring/>;
+            case 1: return <Developers extendable={true}/>;
+            case 2: return <JobOffers extendable={true}/>;
+            case 3: return <Technologies extendable={true}/>;
         }
 
     }

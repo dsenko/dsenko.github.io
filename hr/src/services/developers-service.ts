@@ -13,6 +13,10 @@ export enum Score {
     SCORE_5 = '5',
 }
 
+export function mapFromNumericScore(score: number | string) : Score {
+    return Score['SCORE_'+score];
+}
+
 export interface DeveloperExcelRow extends ExcelRow {
     firstName: string;
     lastName: string;

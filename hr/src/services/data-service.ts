@@ -13,10 +13,6 @@ export class DataService<T extends DataItem> {
         this.compositeKeyFields = compositeKeyFields;
     }
 
-    getItems(): Array<T> {
-        return this.items;
-    }
-
     getImmutableItems(): Array<T> {
         return Utils.copy(this.items);
     }
@@ -68,7 +64,7 @@ export class DataService<T extends DataItem> {
             item.key = this.createKey(item);
         }
 
-        return items;
+        return Utils.copy(items);
 
     }
 
@@ -86,9 +82,9 @@ export class DataService<T extends DataItem> {
 
     add(item: T): T {
         item.key = this.createKey(item);
-        this.items.unshift(item);
+        this.items.unshift(Utils.copy(item));
         this.onChange();
-        return item;
+        return Utils.copy(item);
     }
 
     private remove(item: T): void {
@@ -97,7 +93,7 @@ export class DataService<T extends DataItem> {
     }
 
     replaceItems(items: Array<T>): void {
-        this.items = Utils.copy(items);
+        this.items = this.regenerateKeys(items);
         this.onChange();
     }
 

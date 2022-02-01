@@ -1,6 +1,5 @@
 import {saveAs} from 'file-saver';
 import {TableRow} from "../components/Table";
-import {FileUploadHandlerParam} from "primereact/fileupload";
 
 export interface ExcelRow {
     sheet?: string;
@@ -19,7 +18,7 @@ export interface ExcelData {
 
 export class ExcelService {
 
-   public importExcel = async (e, fn: (excelData: ExcelData) => Array<TableRow>) : Promise<Array<TableRow>> => {
+   public importExcel = async (e, fn: (excelData: ExcelData) => Array<TableRow>) : Promise<Array<ExcelRow>> => {
 
         return new Promise((resolve) => {
 
@@ -29,21 +28,35 @@ export class ExcelService {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const wb = xlsx.read(e.target.result, { type: 'array' });
-                    const wsname = wb.SheetNames[0];
-                    const ws = wb.Sheets[wsname];
-                    const data = xlsx.utils.sheet_to_json(ws, { header: 1 });
 
-                    // Prepare DataTable
-                    const cols: any = data[0];
-                    data.shift();
+                    let importedCols = null;
+                    let importedRows = [];
 
-                    let importedCols = cols.map(col => ({ field: col, header: this.toCapitalize(col) }));
-                    let importedRows = data.map(d => {
-                        return cols.reduce((obj, c, i) => {
-                            obj[c] = d[i];
-                            return obj;
-                        }, {});
-                    });
+                    for(let sheetName of wb.SheetNames){
+
+                        const ws = wb.Sheets[sheetName];
+                        const data = xlsx.utils.sheet_to_json(ws, { header: 1 });
+
+                        // Prepare DataTable
+                        const cols: any = data[0];
+                        data.shift();
+
+                        if(importedCols === null){
+                            importedCols = cols.map(col => ({ field: col, header: this.toCapitalize(col) }));
+                        }
+
+                        importedRows.push({
+                            sheet: sheetName,
+                            rows: data.map(d => {
+                                return cols.reduce((obj, c, i) => {
+                                    obj[c] = d[i];
+                                    return obj;
+                                }, {});
+                            })
+                        });
+
+                    }
+
 
                     resolve(fn({
                         importedCols: importedCols,
@@ -104,18 +117,8 @@ export class ExcelService {
         saveAs(data, fileName + '_export_' + new Date().getTime() + EXCEL_EXTENSION);
     }
 
-    async importSingleExcel(e: FileUploadHandlerParam, prepareSingleRowToImport: (excelData: ExcelData) => TableRow) {
-
-       let rows: Array<TableRow> = await this.importExcel(e, (excelData: ExcelData) => {
-           return [prepareSingleRowToImport(excelData)];
-       });
-
-       return rows[0];
-
-    }
-
     exportSingleExcel(name: string, row: any) {
-        this.exportExcel(name, [row]);
+        this.exportExcel(name, row);
     }
 
 }
