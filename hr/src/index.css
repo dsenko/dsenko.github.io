@@ -1,0 +1,45 @@
+html {
+    font-size: 1rem;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+    padding: 1rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: var(--surface-ground);
+    font-family: var(--font-family);
+    font-weight: normal;
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.card {
+    padding: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+}
+
+.token {
+    display: inline-block !important;
+    float: left;
+    width: auto !important;
+}
+
+.field.type-3 {
+    display: flex;
+}
+
+.field.type-3 > label {
+    margin: 0;
+}
+
+.developer-tech-token > div:first-child {
+    float: left;
+}
+
+.developer-tech-token .p-dropdown {
+    width: 6rem;
+}
