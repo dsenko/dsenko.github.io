@@ -2,9 +2,9 @@ import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {technologiesService, Technology} from "../services/technologies-service";
 import {ToggleButton} from "primereact/togglebutton";
-import {SelectButton} from "primereact/selectbutton";
 import {MenuItem} from "primereact/menuitem";
 import {Utils} from "../utils";
+import {Dropdown} from "primereact/dropdown";
 
 interface JobOfferTechnologiesProps extends DefaultProps {
     onSelect?: (items: Array<Technology>) => void;
@@ -105,7 +105,7 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
         return <div>
 
             <div className="card mb-2">
-                <SelectButton optionLabel="label" value={this.state.category} options={this.state.categories} onChange={(e) => this.onCategoryChange(e.value)}/>
+                <Dropdown options={this.state.categories} value={this.state.category} onChange={(e) => this.onCategoryChange(e.value)}/>
             </div>
 
             <div className="block">

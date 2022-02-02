@@ -105,4 +105,15 @@ export class Utils {
         return typeof obj === 'string' || obj instanceof String;
     }
 
+    static findInArray(items: Array<any>, value: string, field: string) {
+
+        for(let item of items){
+            if(item[field] === value){
+                return item;
+            }
+        }
+
+        return null;
+
+    }
 }

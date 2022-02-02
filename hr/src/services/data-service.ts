@@ -47,7 +47,7 @@ export class DataService<T extends DataItem> {
                 try {
                     this.items = JSON.parse(localStorage.getItem(this.name));
                 }catch (e){
-                    console.log(e);
+                    console.warn(e);
                 }
 
             }

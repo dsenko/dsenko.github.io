@@ -1,7 +1,6 @@
 import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {technologiesService, Technology} from "../services/technologies-service";
-import {SelectButton} from "primereact/selectbutton";
 import {MenuItem} from "primereact/menuitem";
 import {Utils} from "../utils";
 import {DeveloperTechnology, Score} from "../services/developers-service";
@@ -47,6 +46,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
         this.setSingle('technologies', technologiesService.getImmutableItems());
         this.setCategories();
         this.scoreTechnologies();
+
         technologiesService.on(this.updateTechnologies);
     }
 
@@ -71,6 +71,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
     private scoreTechnologies(): void {
 
         for (let tech2 of this.props.scoredTechnologies) {
+            tech2.theory = Utils.findInArray(this.state.technologies, tech2.key, 'key').theory;
             Utils.replaceInArray(this.state.technologies, tech2, 'key');
         }
 
@@ -120,7 +121,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
         return <div>
 
             <div className="card mb-2">
-                <SelectButton optionLabel="label" value={this.state.category} options={this.state.categories} onChange={(e) => this.onCategoryChange(e.value)}/>
+                <Dropdown options={this.state.categories} value={this.state.category} onChange={(e) => this.onCategoryChange(e.value)}/>
             </div>
 
             <div className="block">
@@ -132,7 +133,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
                         return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
                             <div className="flex justify-content-center align-items-center">
                                 <div className="mr-2">{label}</div>
-                                <Dropdown className={technology.score !== undefined && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
+                                <Dropdown className={Utils.isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
                             </div>
                         </div>
 
