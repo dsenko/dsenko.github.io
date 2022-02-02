@@ -5,6 +5,8 @@ import {developersService, DeveloperTechnology, Score} from "./services/develope
 //TODO lock storage (load from it even) when is not empty (all data sources like technology, joboffers, developers - if there is lack of one of them then clear)
 export function prepareData(): void {
 
+    return;
+
     function addTechToDev(tech: Technology, score: Score) {
         (tech as DeveloperTechnology).score = score;
         return tech as DeveloperTechnology

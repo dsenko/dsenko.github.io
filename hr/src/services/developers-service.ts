@@ -17,12 +17,6 @@ export function mapFromNumericScore(score: number | string) : Score {
     return Score['SCORE_'+score];
 }
 
-export interface DeveloperExcelRow extends ExcelRow {
-    firstName: string;
-    lastName: string;
-    technologies: string;
-}
-
 export interface DeveloperTechnologyExcelRow extends ExcelRow {
     category: string;
     name: string;

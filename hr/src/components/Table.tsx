@@ -95,13 +95,26 @@ export class Table extends State<TableProps, TableState> {
     }
 
     private exportExcel = () => {
-        excelService.exportExcel(this.props.name, this.props.prepareRowsToExport ? this.props.prepareRowsToExport(this.state.rows) : this.state.rows);
+
+        try {
+            excelService.exportExcel(this.props.name, this.props.prepareRowsToExport ? this.props.prepareRowsToExport(this.state.rows) : this.state.rows);
+        } catch (e) {
+            console.warn(e);
+        }
+
     }
 
     private importExcel = async (e: FileUploadHandlerParam): Promise<void> => {
-        this.mergeImportedRows(await excelService.importExcel(e, this.props.prepareRowsToImport));
-        this.props.onDataUpdate(this.state.rows);
+
+        try {
+            this.mergeImportedRows(await excelService.importExcel(e, this.props.prepareRowsToImport));
+            this.props.onDataUpdate(this.state.rows);
+        } catch (e) {
+            console.warn(e);
+        }
+
         e.options.clear();
+
     }
 
     private mergeImportedRows(rows: Array<TableRow>): void {
@@ -109,7 +122,13 @@ export class Table extends State<TableProps, TableState> {
     }
 
     private exportSingleRowExcel(row: TableRow): void {
-        excelService.exportSingleExcel(this.props.name, this.props.prepareSingleRowToExport ? this.props.prepareSingleRowToExport(row) : row);
+
+        try {
+            excelService.exportSingleExcel(this.props.name, this.props.prepareSingleRowToExport ? this.props.prepareSingleRowToExport(row) : row);
+        } catch (e) {
+            console.warn(e);
+        }
+
     }
 
     render(): JSX.Element {
@@ -118,10 +137,10 @@ export class Table extends State<TableProps, TableState> {
 
             <div className="flex card mb-2">
                 {this.props.extendable ?
-                <Button type="button" className="p-button-primary" icon="pi pi-plus" label="Add" onClick={this.openEditDialog}/> : ''}
+                    <Button type="button" className="p-button-primary" icon="pi pi-plus" label="Add" onClick={this.openEditDialog}/> : ''}
                 {this.props.prepareRowsToImport ?
-                <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
-                            customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/> : ''}
+                    <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
+                                customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/> : ''}
                 {this.props.prepareRowsToExport ? <Button type="button" className="p-button-primary ml-2" label="Export" icon="pi pi-file-excel" onClick={this.exportExcel}/> : ''}
             </div>
 
@@ -182,7 +201,7 @@ export class Table extends State<TableProps, TableState> {
 
     private actionsTemplate = (row: TableRow): JSX.Element => {
 
-        if(!this.props.actions){
+        if (!this.props.actions) {
             return <></>
         }
 
@@ -208,7 +227,7 @@ export class Table extends State<TableProps, TableState> {
 
         let columns: Array<JSX.Element> = [];
 
-        if(this.props.actions){
+        if (this.props.actions) {
             columns.push(<Column key={-2} field="actions" header="Actions" body={this.actionsTemplate}/>);
         }
 

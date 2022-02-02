@@ -1,3 +1,5 @@
+import lodashIsFunction from 'lodash.isfunction';
+
 export class Utils {
 
     static copy(obj: any): any {
@@ -59,6 +61,48 @@ export class Utils {
 
         });
 
+    }
+
+    public static isNotEmpty(obj: any): boolean {
+        return !this.isEmpty(obj);
+    }
+
+    public static isEmpty(obj: any): boolean {
+
+        if (obj === undefined || obj === null) {
+            return true;
+        }
+
+        if (this.isFunction(obj) && obj.length === 0) {
+            return true;
+        }
+
+        if (this.isString(obj) && obj.trim().length === 0) {
+            return true;
+        }
+
+        if (obj.hasOwnProperty('length') && this.isNotNull(obj['length']) && obj.length == 0) {
+            return true;
+        }
+
+        return false;
+
+    }
+
+    public static isFunction(obj: any): boolean {
+        return lodashIsFunction(obj);
+    }
+
+    public static isNotNull(obj: any) {
+        return !this.isNull(obj);
+    }
+
+    public static isNull(obj: any) {
+        return obj === null || obj === undefined;
+    }
+
+    public static isString(obj: any): boolean {
+        return typeof obj === 'string' || obj instanceof String;
     }
 
 }

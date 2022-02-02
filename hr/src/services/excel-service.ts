@@ -1,5 +1,6 @@
 import {saveAs} from 'file-saver';
 import {TableRow} from "../components/Table";
+import {FileUploadHandlerParam} from "primereact/fileupload";
 
 export interface ExcelRow {
     sheet?: string;
@@ -18,50 +19,60 @@ export interface ExcelData {
 
 export class ExcelService {
 
-   public importExcel = async (e, fn: (excelData: ExcelData) => Array<TableRow>) : Promise<Array<ExcelRow>> => {
+   public importExcel = async (event: FileUploadHandlerParam, fn: (excelData: ExcelData) => Array<TableRow>) : Promise<Array<ExcelRow>> => {
 
         return new Promise((resolve) => {
 
-            const file = e.files[0];
+            const file = event.files[0];
 
             import('xlsx').then(xlsx => {
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const wb = xlsx.read(e.target.result, { type: 'array' });
 
-                    let importedCols = null;
-                    let importedRows = [];
+                    try {
+                        const wb = xlsx.read(e.target.result, { type: 'array' });
 
-                    for(let sheetName of wb.SheetNames){
+                        let importedCols = null;
+                        let importedRows = [];
 
-                        const ws = wb.Sheets[sheetName];
-                        const data = xlsx.utils.sheet_to_json(ws, { header: 1 });
+                        for(let sheetName of wb.SheetNames){
 
-                        // Prepare DataTable
-                        const cols: any = data[0];
-                        data.shift();
+                            const ws = wb.Sheets[sheetName];
+                            const data = xlsx.utils.sheet_to_json(ws, { header: 1 });
 
-                        if(importedCols === null){
-                            importedCols = cols.map(col => ({ field: col, header: this.toCapitalize(col) }));
+                            // Prepare DataTable
+                            const cols: any = data[0];
+                            data.shift();
+
+                            if(importedCols === null){
+                                importedCols = cols.map(col => ({ field: col, header: this.toCapitalize(col) }));
+                            }
+
+                            importedRows.push({
+                                sheet: sheetName,
+                                rows: data.map(d => {
+                                    return cols.reduce((obj, c, i) => {
+                                        obj[c] = d[i];
+                                        return obj;
+                                    }, {});
+                                })
+                            });
+
                         }
 
-                        importedRows.push({
-                            sheet: sheetName,
-                            rows: data.map(d => {
-                                return cols.reduce((obj, c, i) => {
-                                    obj[c] = d[i];
-                                    return obj;
-                                }, {});
-                            })
-                        });
 
+                        resolve(fn({
+                            importedCols: importedCols,
+                            importedRows: importedRows
+                        }));
+
+                    }catch (err){
+                        console.warn(err);
+                        event.options.clear();
+                        resolve(null);
                     }
 
-
-                    resolve(fn({
-                        importedCols: importedCols,
-                        importedRows: importedRows
-                    }));
 
                 };
 

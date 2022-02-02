@@ -11,6 +11,7 @@ export class DataService<T extends DataItem> {
     constructor(name: string, compositeKeyFields: Array<string>) {
         this.name = name;
         this.compositeKeyFields = compositeKeyFields;
+        this.loadFromStorage();
     }
 
     getImmutableItems(): Array<T> {
@@ -35,6 +36,26 @@ export class DataService<T extends DataItem> {
 
     on(fn: (items: Array<T>) => void): void {
         this.listeners.push(fn);
+    }
+
+    private async loadFromStorage() : Promise<void> {
+
+        return new Promise((resolve) => {
+
+            if(Utils.isNotEmpty(localStorage.getItem(this.name))){
+
+                try {
+                    this.items = JSON.parse(localStorage.getItem(this.name));
+                }catch (e){
+                    console.log(e);
+                }
+
+            }
+
+
+            resolve();
+        });
+
     }
 
     private async sync() : Promise<void> {
