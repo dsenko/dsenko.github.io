@@ -141,7 +141,7 @@ export class Table extends State<TableProps, TableState> {
                 {this.props.prepareRowsToImport ?
                     <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
                                 customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/> : ''}
-                {this.props.prepareRowsToExport ? <Button type="button" className="p-button-primary ml-2" label="Export" icon="pi pi-file-excel" onClick={this.exportExcel}/> : ''}
+                {this.props.prepareRowsToExport ? <Button type="button" className={`p-button-primary ${this.props.prepareRowsToImport || this.props.extendable ? 'ml-2' : ''}`} label="Export" icon="pi pi-file-excel" onClick={this.exportExcel}/> : ''}
             </div>
 
             <div className="card">
