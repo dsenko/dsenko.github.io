@@ -81,8 +81,6 @@ export class ExcelService {
 
         import('xlsx').then(xlsx => {
 
-            console.log('data', data);
-
             if(data.length > 0){
 
                 let sheets = {};

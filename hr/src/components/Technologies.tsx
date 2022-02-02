@@ -2,7 +2,7 @@ import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
 import {technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
-import {ExcelData} from "../services/excel-service";
+import {ExcelData, ExcelRow} from "../services/excel-service";
 import {JobOffer, jobOffersService} from "../services/job-offers-service";
 import {Checkbox} from "primereact/checkbox";
 import {Button} from "primereact/button";
@@ -106,7 +106,7 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
     private prepareRowsToImport = (excelData: ExcelData): Array<TableRow> => {
 
         let rows: Array<Technology> = [];
-        for(let row of excelData.importedRows){
+        for(let row of (excelData.importedRows[0] as ExcelRow).rows){
 
             let technology: Technology = {
                 category: row['category'],

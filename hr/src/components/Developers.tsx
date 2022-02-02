@@ -66,8 +66,6 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
 
     private openChooseTechnologyDialog = (row: Developer): void => {
 
-        console.log(row);
-
         this.setMany({
             showChooseTechnologyDialog: true,
             row: row,
@@ -194,8 +192,6 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
 
             developer.technologies = technologiesService.regenerateKeys(developer.technologies as Array<Technology>) as Array<DeveloperTechnology>;
             technologiesService.mergeNotExisting(developer.technologies);
-
-            console.log(developer.technologies);
 
             rows.push(developer);
 
