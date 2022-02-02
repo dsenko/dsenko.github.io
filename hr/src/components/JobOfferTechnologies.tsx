@@ -5,6 +5,7 @@ import {ToggleButton} from "primereact/togglebutton";
 import {MenuItem} from "primereact/menuitem";
 import {Utils} from "../utils";
 import {Dropdown} from "primereact/dropdown";
+import {InputText} from "primereact/inputtext";
 
 interface JobOfferTechnologiesProps extends DefaultProps {
     onSelect?: (items: Array<Technology>) => void;
@@ -15,6 +16,7 @@ interface JobOfferTechnologiesState extends DefaultState {
     category: MenuItem;
     categories: Array<MenuItem>;
     technologies: Array<Technology>;
+    filter: string;
 }
 
 export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOfferTechnologiesState> {
@@ -24,7 +26,8 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
     state: JobOfferTechnologiesState = {
         category: this.anyCategory,
         categories: [],
-        technologies: []
+        technologies: [],
+        filter: ''
     }
 
     componentDidMount(): void {
@@ -92,6 +95,10 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
         this.props.onSelect(Utils.copy(this.state.technologies));
     }
 
+    private onChangeFilter = (value: string): void => {
+        this.setSingle('filter', Utils.isEmpty(value) ? '' : value);
+    }
+
     private onCategoryChange = (value: MenuItem): void => {
 
         if (value === null) {
@@ -104,8 +111,15 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
     render(): JSX.Element {
         return <div>
 
-            <div className="card mb-2">
-                <Dropdown options={this.state.categories} value={this.state.category} onChange={(e) => this.onCategoryChange(e.value)}/>
+            <div className="flex card mb-2">
+                <div className="flex align-items-center">
+                    <label htmlFor="dfilter" className="filter-label mr-2">Search in category</label>
+                    <InputText id="dfilter" className="flex-1" value={this.state.filter} onChange={(e) => this.onChangeFilter(e.target.value)}/>
+                </div>
+                <div className="flex align-items-center flex-1 ml-2">
+                    <label htmlFor="dcategory" className="filter-label mr-2">Category</label>
+                    <Dropdown id="dcategory" className="flex-1" options={this.state.categories} value={this.state.category} onChange={(e) => this.onCategoryChange(e.value)}/>
+                </div>
             </div>
 
             <div className="block">
@@ -113,8 +127,13 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
 
                     if (this.state.category.label === this.anyCategory.label || technology.category === this.state.category.label) {
                         let label: string = `${technology.category}/${technology.name}`;
-                        return <ToggleButton className="token mx-1 my-1 flex justify-content-center align-items-center" key={index} onLabel={label} offLabel={label}
-                                             checked={technology.checked} onChange={(e) => this.checkTechnology(technology, e.value)}/>;
+
+                        if(label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1){
+                            return <ToggleButton className="token mx-1 my-1 flex justify-content-center align-items-center" key={index} onLabel={label} offLabel={label}
+                                                 checked={technology.checked} onChange={(e) => this.checkTechnology(technology, e.value)}/>;
+                        }
+
+                        return <React.Fragment key={index}/>
 
                     }
 

@@ -5,6 +5,7 @@ import {MenuItem} from "primereact/menuitem";
 import {Utils} from "../utils";
 import {DeveloperTechnology, Score} from "../services/developers-service";
 import {Dropdown} from "primereact/dropdown";
+import {InputText} from "primereact/inputtext";
 
 interface DeveloperTechnologiesProps extends DefaultProps {
     onSelect?: (items: Array<DeveloperTechnology>) => void;
@@ -15,6 +16,7 @@ interface DeveloperTechnologiesState extends DefaultState {
     category: MenuItem;
     categories: Array<MenuItem>;
     technologies: Array<DeveloperTechnology>;
+    filter: string;
 }
 
 export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, DeveloperTechnologiesState> {
@@ -39,7 +41,8 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
     state: DeveloperTechnologiesState = {
         category: this.anyCategory,
         categories: [],
-        technologies: []
+        technologies: [],
+        filter: ''
     }
 
     componentDidMount(): void {
@@ -108,6 +111,10 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
         this.props.onSelect(Utils.copy(this.state.technologies));
     }
 
+    private onChangeFilter = (value: string): void => {
+        this.setSingle('filter', Utils.isEmpty(value) ? '' : value);
+    }
+
     private onCategoryChange = (value: MenuItem): void => {
 
         if (value === null) {
@@ -120,8 +127,15 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
     render(): JSX.Element {
         return <div>
 
-            <div className="card mb-2">
-                <Dropdown options={this.state.categories} value={this.state.category} onChange={(e) => this.onCategoryChange(e.value)}/>
+            <div className="flex card mb-2">
+                <div className="flex align-items-center">
+                    <label htmlFor="dfilter" className="filter-label mr-2">Search in category</label>
+                    <InputText id="dfilter" className="flex-1" value={this.state.filter} onChange={(e) => this.onChangeFilter(e.target.value)}/>
+                </div>
+                <div className="flex align-items-center flex-1 ml-2">
+                    <label htmlFor="dcategory" className="filter-label mr-2">Category</label>
+                    <Dropdown id="dcategory" className="flex-1" options={this.state.categories} value={this.state.category} onChange={(e) => this.onCategoryChange(e.value)}/>
+                </div>
             </div>
 
             <div className="block">
@@ -130,13 +144,16 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
                     if (this.state.category.label === this.anyCategory.label || technology.category === this.state.category.label) {
                         let label: string = `${technology.category}/${technology.name}`;
 
-                        return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
-                            <div className="flex justify-content-center align-items-center">
-                                <div className="mr-2">{label}</div>
-                                <Dropdown className={Utils.isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
+                        if(label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1){
+                            return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
+                                <div className="flex justify-content-center align-items-center">
+                                    <div className="mr-2">{label}</div>
+                                    <Dropdown className={Utils.isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
+                                </div>
                             </div>
-                        </div>
+                        }
 
+                        return <React.Fragment key={index}/>
                     }
 
                     return <React.Fragment key={index}/>
