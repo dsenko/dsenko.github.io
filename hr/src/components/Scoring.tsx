@@ -4,7 +4,7 @@ import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
 import {Developer, developersService, DeveloperTechnology, Score} from "../services/developers-service";
 import {ExcelRow} from "../services/excel-service";
 import {JobOffer, jobOffersService} from "../services/job-offers-service";
-import {Importance, Technology} from "../services/technologies-service";
+import {Importance, technologiesService, Technology} from "../services/technologies-service";
 import {Utils} from "../utils";
 
 interface DeveloperScore extends TableRow, ExcelRow {
@@ -71,6 +71,10 @@ export class Scoring extends State<ScoringProps, ScoringState> {
             this.prepareScores();
         });
 
+        technologiesService.on((items: Array<Technology>) => {
+            this.prepareScores();
+        });
+
     }
 
     private prepareScores(): void {
@@ -101,7 +105,7 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
         function calcForImportance(developerScore: Score, givenScore: number, importance: Importance) {
 
-
+            console.log(`calcForImportance ${developerScore} ${givenScore} ${importance}`);
             if(importance === Importance.MUST_HAVE && (developerScore === Score.SCORE_NO || developerScore === Score.SCORE_NONE || Utils.isEmpty(developerScore))){
                 score = -999;
             }else if(importance === Importance.MUST_HAVE && developerScore !== Score.SCORE_NO && developerScore !== Score.SCORE_NONE && Utils.isNotEmpty(developerScore)){
@@ -110,36 +114,62 @@ export class Scoring extends State<ScoringProps, ScoringState> {
                 score += givenScore;
             }
 
+            console.log(`after score ${score}`);
+
         }
+
+        console.log('developerTechnologies', developerTechnologies);
 
         for(let jobOfferTech of jobOfferTechnologies){
 
             if(jobOfferTech.importance === Importance.MUST_HAVE || jobOfferTech.importance === Importance.NICE_TO_HAVE){
 
-                let developerTech: DeveloperTechnology = Utils.findInArray(developerTechnologies, jobOfferTech.key, 'key') || {
-                    score: Score.SCORE_NO
-                };
+                let developerTech: DeveloperTechnology = Utils.findInArray(developerTechnologies, jobOfferTech.key, 'key');
+
+                console.log('developerTech'+developerTech);
+
+                if(developerTech === null){
+                    developerTech = {
+                        category: jobOfferTech.category,
+                        name: jobOfferTech.name,
+                        score: Score.SCORE_NO
+                    } as DeveloperTechnology;
+                }
+
+                console.log('developerTech', developerTech);
+                console.log('developerTech.score'+developerTech.score);
 
                 switch (developerTech.score){
                     case Score.SCORE_NONE:
+                        console.log('SCORE_NONE');
                         calcForImportance(developerTech.score, 0, jobOfferTech.importance);
                         break;
                     case Score.SCORE_NO:
+                        console.log('SCORE_NO');
                         calcForImportance(developerTech.score,-2.5, jobOfferTech.importance);
                         break;
+                    case Score.SCORE_YES:
+                        console.log('SCORE_YES');
+                        calcForImportance(developerTech.score,5, jobOfferTech.importance);
+                        break;
                     case Score.SCORE_1:
+                        console.log('SCORE_1');
                         calcForImportance(developerTech.score,1, jobOfferTech.importance);
                         break;
                     case Score.SCORE_2:
+                        console.log('SCORE_2');
                         calcForImportance(developerTech.score,2, jobOfferTech.importance);
                         break;
                     case Score.SCORE_3:
+                        console.log('SCORE_3');
                         calcForImportance(developerTech.score,3, jobOfferTech.importance);
                         break;
                     case Score.SCORE_4:
+                        console.log('SCORE_4');
                         calcForImportance(developerTech.score,4, jobOfferTech.importance);
                         break;
                     case Score.SCORE_5:
+                        console.log('SCORE_5');
                         calcForImportance(developerTech.score,5, jobOfferTech.importance);
                         break;
                 }

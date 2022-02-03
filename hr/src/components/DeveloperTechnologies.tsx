@@ -49,7 +49,6 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
         this.setSingle('technologies', technologiesService.getImmutableItems());
         this.setCategories();
         this.scoreTechnologies();
-
         technologiesService.on(this.updateTechnologies);
     }
 
