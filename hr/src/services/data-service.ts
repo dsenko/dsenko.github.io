@@ -123,19 +123,3 @@ export class DataService<T extends DataItem> {
 export interface DataItem extends TableRow {
     key?: string;
 }
-
-//
-// export interface DeveloperTechnology {
-//     developer: string;
-//     technology: string;
-//     know: boolean;
-//     score: number;
-// }
-//
-//
-//
-// export interface Developer extends DataItem{
-//     firstName: string;
-//     lastName: string;
-//     technologies: Array<DeveloperTechnology>;
-// }

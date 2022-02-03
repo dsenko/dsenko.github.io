@@ -21,6 +21,7 @@ export interface DeveloperTechnologyExcelRow extends ExcelRow {
     category: string;
     name: string;
     score: string;
+    theory: string;
 }
 
 export interface DeveloperTechnology extends Technology {
@@ -28,12 +29,11 @@ export interface DeveloperTechnology extends Technology {
 }
 
 export interface Developer extends DataItem {
-    firstName: string;
-    lastName: string;
+    fullName: string;
     technologies: Array<DeveloperTechnology>;
 }
 
 export class DevelopersService extends DataService<Developer> {
 }
 
-export const developersService = new DevelopersService('developers', ['firstName', 'lastName']);
+export const developersService = new DevelopersService('developers', ['fullName']);

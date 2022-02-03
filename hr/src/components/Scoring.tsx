@@ -82,7 +82,7 @@ export class Scoring extends State<ScoringProps, ScoringState> {
             for (let jobOffer of this.state.jobOffers) {
 
                 this.state.scores.push({
-                    developer: developer.firstName + ' ' + developer.lastName,
+                    developer: developer.fullName,
                     jobOffer: jobOffer.name,
                     score: this.calculateScore(jobOffer.technologies, developer.technologies)
                 });

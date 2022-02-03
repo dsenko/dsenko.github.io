@@ -117,6 +117,7 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
                 return {
                     category: technology.category,
                     name: technology.name,
+                    theory: technology.theory ? 'YES' : 'NO',
                     importance: (() => {
 
                         for(let tech of jobOffer.technologies){
@@ -171,6 +172,7 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
                             return {
                                 category: technology.category,
                                 name: technology.name,
+                                theory: technology.theory === 'YES',
                                 importance: technology.importance
                             }
 

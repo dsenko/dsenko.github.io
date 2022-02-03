@@ -25,15 +25,8 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
 
     private cols: Array<TableColumn> = [
         {
-            header: 'First name',
-            field: 'firstName',
-            editable: true,
-            sortable: true,
-            type: TableColumnType.TEXT
-        },
-        {
-            header: 'Last name',
-            field: 'lastName',
+            header: 'Full name',
+            field: 'fullName',
             editable: true,
             sortable: true,
             type: TableColumnType.TEXT
@@ -122,6 +115,7 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
                 return {
                     category: technology.category,
                     name: technology.name,
+                    theory: technology.theory ? 'YES' : 'NO',
                     score: (() => {
 
                         for (let tech of developer.technologies) {
@@ -152,7 +146,7 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
             });
 
             exportRows.push({
-                sheet: developer.firstName + ' ' + developer.lastName,
+                sheet: developer.fullName,
                 rows: technologiesRows
             })
 
@@ -167,12 +161,8 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
         let rows: Array<Developer> = [];
         for (let row of excelData.importedRows) {
 
-            let firstName: string = row['sheet'].split(' ')[0];
-            let lastName: string = row['sheet'].split(' ')[1];
-
             let developer: Developer = {
-                firstName: firstName,
-                lastName: lastName,
+                fullName: row['sheet'],
                 technologies: row['rows'] ? row['rows'].map((technology: DeveloperTechnologyExcelRow) => {
 
                     if (technology.score === Score.SCORE_NONE) {
@@ -182,6 +172,7 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
                     return {
                         category: technology.category,
                         name: technology.name,
+                        theory: technology.theory === 'YES',
                         score: mapFromNumericScore(technology.score)
                     }
 
@@ -206,7 +197,7 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
         let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.developers);
 
         for (let row of rows) {
-            if (row.sheet === `${item['firstName']} ${item['lastName']}`) {
+            if (row.sheet === item['fullName']) {
                 return [row];
             }
         }

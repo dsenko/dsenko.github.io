@@ -11,7 +11,7 @@ import {ExcelData, ExcelRow, excelService} from "../services/excel-service";
 import {FileUpload, FileUploadHandlerParam} from "primereact/fileupload";
 import {Checkbox} from "primereact/checkbox";
 import {Tooltip} from "primereact/tooltip";
-import {Badge} from "primereact/badge";
+import {FilterMatchMode} from "primereact/api";
 
 export enum EditMode {
     EDIT,
@@ -54,6 +54,8 @@ interface TableState extends DefaultState {
     cols: Record<string, TableColumn>;
     selection: Array<TableRow>;
     editMode: EditMode;
+    globalFilterValue: string;
+    filters: Record<string, any>;
 }
 
 export class Table extends State<TableProps, TableState> {
@@ -78,8 +80,13 @@ export class Table extends State<TableProps, TableState> {
         rows: [],
         cols: {},
         selection: [],
-        editMode: EditMode.ADD
+        editMode: EditMode.ADD,
+        globalFilterValue: '',
+        filters: {
+            'global': {value: null, matchMode: FilterMatchMode.CONTAINS}
+        },
     }
+
     private emptyRow: TableRow = {};
 
     componentDidMount() {
@@ -141,22 +148,31 @@ export class Table extends State<TableProps, TableState> {
                 {this.props.extendable ?
                     <Button type="button" className="p-button-primary" icon="pi pi-plus" label="Add" onClick={this.openEditDialog}/> : ''}
                 {this.props.prepareRowsToImport ?
-                          <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
-                                    customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/>
+                    <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
+                                customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/>
 
-         : ''}
+                    : ''}
                 {this.props.prepareRowsToExport ? <Button type="button" className={`p-button-primary ${this.props.prepareRowsToImport || this.props.extendable ? 'ml-2' : ''}`} label="Export" icon="pi pi-file-excel" onClick={this.exportExcel}/> : ''}
 
 
                 {this.props.prepareRowsToImport ? <div className="flex align-items-center">
-                    <Tooltip target=".import-info-icon" />
-                    <i className="import-info-icon pi pi-question-circle p-text-secondary p-overlay-badge ml-2" data-pr-tooltip="Import does not replace existing rows. To replace existing row, remove it before importing." data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '1rem', cursor: 'pointer' }}/>
+                    <Tooltip target=".import-info-icon"/>
+                    <i className="import-info-icon pi pi-question-circle p-text-secondary p-overlay-badge ml-2" data-pr-tooltip="Import does not replace existing rows. To replace existing row, remove it before importing." data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2"
+                       style={{fontSize: '1rem', cursor: 'pointer'}}/>
                 </div> : ''}
+
+                <div className="flex justify-content-between ml-auto">
+                    <Button type="button" icon="pi pi-filter-slash" label="Clear" className="p-button-outlined mr-2" onClick={this.clearFilter}/>
+                    <span className="p-input-icon-left">
+                    <i className="pi pi-search"/>
+                    <InputText value={this.state.globalFilterValue} onChange={this.onGlobalFilterChange} placeholder="Keyword Search"/>
+                </span>
+                </div>
 
             </div>
 
             <div className="card">
-                <DataTable value={this.props.rows} responsiveLayout="scroll">
+                <DataTable value={this.props.rows} responsiveLayout="scroll" filters={this.state.filters}>
                     {this.renderColumns()}
                 </DataTable>
             </div>
@@ -210,6 +226,20 @@ export class Table extends State<TableProps, TableState> {
         this.setSingle('row', Utils.copy(this.emptyRow));
     }
 
+    private clearFilter = () => {
+        this.setFilterValue('');
+    }
+
+    private onGlobalFilterChange = (e) => {
+        this.setFilterValue(e.target.value);
+    }
+
+    private setFilterValue(value: string) : void {
+        let filters = {...this.state.filters};
+        filters['global'].value = value;
+        this.setMany({filters: filters, globalFilterValue: value});
+    }
+
     private actionsTemplate = (row: TableRow): JSX.Element => {
 
         if (!this.props.actions) {
@@ -220,7 +250,6 @@ export class Table extends State<TableProps, TableState> {
             <Button type="button" icon="pi pi-pencil" className="p-button-primary mr-1" onClick={this.openEditDialog.bind(this, null, row)}/>
             <Button type="button" icon="pi pi-trash" className="p-button-primary mr-1" onClick={this.openRemoveDialog.bind(this, null, row)}/>
             {this.props.prepareSingleRowToExport ? <Button type="button" icon="pi pi-file-excel" className="p-button-primary" onClick={(e) => this.exportSingleRowExcel(row)}/> : ''}
-
         </div>;
     }
 
