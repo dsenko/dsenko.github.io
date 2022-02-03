@@ -47,7 +47,7 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
 
     componentDidUpdate(prevProps: Readonly<JobOfferTechnologiesProps>, prevState: Readonly<JobOfferTechnologiesState>, snapshot?: any) {
 
-        if(!Utils.sameAs(prevProps.selectedTechnologies, this.props.selectedTechnologies)){
+        if (!Utils.sameAs(prevProps.selectedTechnologies, this.props.selectedTechnologies)) {
             this.checkTechnologies();
         }
 
@@ -59,9 +59,9 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
         this.checkTechnologies();
     }
 
-    private checkTechnologies() : void {
+    private checkTechnologies(): void {
 
-        for(let tech2 of this.props.selectedTechnologies){
+        for (let tech2 of this.props.selectedTechnologies) {
             tech2.checked = true;
             Utils.replaceInArray(this.state.technologies, tech2, 'key');
         }
@@ -132,18 +132,17 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
                 </div>
             </div>
 
-            <div className="block">
+            <div className="tech-list">
                 {this.state.technologies.map((technology: Technology, index: number) => {
 
                     if (this.state.category.label === this.anyCategory.label || technology.category === this.state.category.label) {
                         let label: string = `${technology.category}/${technology.name}`;
 
-                        if(label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1){
-                            return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
-                                <div className="flex justify-content-center align-items-center">
-                                    <div className="mr-2">{label}</div>
-                                    <Dropdown className={Utils.isNotEmpty(technology.importance) && technology.importance !== Importance.NOT_APPLICABLE ? 'p-button-primary' : ''} value={technology.importance} options={this.importances} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Importance"/>
-                                </div>
+                        if (label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1) {
+                            return <div className="flex p-button p-togglebutton p-component developer-tech-token" key={index}>
+                                <div className="flex-1 text-left pr-2">{label}</div>
+                                <Dropdown className={Utils.isNotEmpty(technology.importance) && technology.importance !== Importance.NOT_APPLICABLE ? 'p-button-primary' : ''} value={technology.importance} options={this.importances} onChange={(e) => this.scoreTechnology(technology, e.value)}
+                                          placeholder="Importance"/>
                             </div>
                         }
 

@@ -141,11 +141,8 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
                 switch (developerTech.score){
                     case Score.SCORE_NONE:
-                        console.log('SCORE_NONE');
-                        calcForImportance(developerTech.score, 0, jobOfferTech.importance);
-                        break;
                     case Score.SCORE_NO:
-                        console.log('SCORE_NO');
+                        console.log('SCORE_NONE SCORE_NO:');
                         calcForImportance(developerTech.score,-2.5, jobOfferTech.importance);
                         break;
                     case Score.SCORE_YES:

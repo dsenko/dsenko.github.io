@@ -137,18 +137,17 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
                 </div>
             </div>
 
-            <div className="block">
+            <div className="tech-list">
                 {this.state.technologies.map((technology: DeveloperTechnology, index: number) => {
 
                     if (this.state.category.label === this.anyCategory.label || technology.category === this.state.category.label) {
                         let label: string = `${technology.category}/${technology.name}`;
 
-                        if(label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1){
-                            return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
-                                <div className="flex justify-content-center align-items-center">
-                                    <div className="mr-2">{label}</div>
-                                    <Dropdown className={Utils.isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
-                                </div>
+                        if (label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1) {
+                            return <div className="flex p-button p-togglebutton p-component developer-tech-token" key={index}>
+                                <div className="flex-1 text-left pr-2">{label}</div>
+                                <Dropdown className={Utils.isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores}
+                                          onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
                             </div>
                         }
 

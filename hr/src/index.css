@@ -22,22 +22,12 @@ body {
     border: 1px solid #e9ecef;
 }
 
-.token {
-    display: inline-block !important;
-    float: left;
-    width: auto !important;
-}
-
 .field.type-3 {
     display: flex;
 }
 
 .field.type-3 > label {
     margin: 0;
-}
-
-.developer-tech-token > div:first-child {
-    float: left;
 }
 
 .developer-tech-token .p-dropdown {
@@ -55,4 +45,10 @@ body {
 
 .filter-label {
     width: auto;
+}
+
+.tech-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 5px;
 }
