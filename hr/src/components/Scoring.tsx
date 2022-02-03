@@ -2,9 +2,9 @@ import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
 import {Developer, developersService, DeveloperTechnology, Score} from "../services/developers-service";
-import {ExcelData, ExcelRow} from "../services/excel-service";
+import {ExcelRow} from "../services/excel-service";
 import {JobOffer, jobOffersService} from "../services/job-offers-service";
-import {Technology} from "../services/technologies-service";
+import {Importance, Technology} from "../services/technologies-service";
 import {Utils} from "../utils";
 
 interface DeveloperScore extends TableRow, ExcelRow {
@@ -99,44 +99,56 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
         let score: number = 0;
 
+        function calcForImportance(developerScore: Score, givenScore: number, importance: Importance) {
+
+
+            if(importance === Importance.MUST_HAVE && (developerScore === Score.SCORE_NO || developerScore === Score.SCORE_NONE)){
+                score = -999;
+            }else if(importance === Importance.MUST_HAVE && developerScore !== Score.SCORE_NO && developerScore !== Score.SCORE_NONE){
+                score += givenScore*2;
+            }else {
+                score += givenScore;
+            }
+
+        }
+
         for(let jobOfferTech of jobOfferTechnologies){
 
-            for(let developerTech of developerTechnologies){
+            if(jobOfferTech.importance === Importance.MUST_HAVE || jobOfferTech.importance === Importance.NICE_TO_HAVE){
 
-                if(jobOfferTech.key === developerTech.key){
+                let developerTech: DeveloperTechnology = Utils.findInArray(developerTechnologies, jobOfferTech.key, 'key') || {
+                    score: Score.SCORE_NO
+                };
 
-                    switch (developerTech.score){
-                        case Score.SCORE_NONE:
-                            //nothing - zero points
-                            break;
-                        case Score.SCORE_NO:
-                            score -= 2.5;
-                            //subtract points for not knowing
-                            break;
-                        case Score.SCORE_1:
-                                score += 1;
-                            break;
-                        case Score.SCORE_2:
-                            score += 2;
-                            break;
-                        case Score.SCORE_3:
-                            score += 3;
-                            break;
-                        case Score.SCORE_4:
-                            score += 4;
-                            break;
-                        case Score.SCORE_5:
-                            score += 5;
-                            break;
-                    }
-
+                switch (developerTech.score){
+                    case Score.SCORE_NONE:
+                        calcForImportance(developerTech.score, 0, jobOfferTech.importance);
+                        break;
+                    case Score.SCORE_NO:
+                        calcForImportance(developerTech.score,-2.5, jobOfferTech.importance);
+                        break;
+                    case Score.SCORE_1:
+                        calcForImportance(developerTech.score,1, jobOfferTech.importance);
+                        break;
+                    case Score.SCORE_2:
+                        calcForImportance(developerTech.score,2, jobOfferTech.importance);
+                        break;
+                    case Score.SCORE_3:
+                        calcForImportance(developerTech.score,3, jobOfferTech.importance);
+                        break;
+                    case Score.SCORE_4:
+                        calcForImportance(developerTech.score,4, jobOfferTech.importance);
+                        break;
+                    case Score.SCORE_5:
+                        calcForImportance(developerTech.score,5, jobOfferTech.importance);
+                        break;
                 }
 
             }
 
         }
 
-        return String(score);
+        return String(score > 0 ? score : 0);
 
     }
 

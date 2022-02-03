@@ -10,6 +10,8 @@ import {confirmDialog} from "primereact/confirmdialog";
 import {ExcelData, ExcelRow, excelService} from "../services/excel-service";
 import {FileUpload, FileUploadHandlerParam} from "primereact/fileupload";
 import {Checkbox} from "primereact/checkbox";
+import {Tooltip} from "primereact/tooltip";
+import {Badge} from "primereact/badge";
 
 export enum EditMode {
     EDIT,
@@ -139,9 +141,18 @@ export class Table extends State<TableProps, TableState> {
                 {this.props.extendable ?
                     <Button type="button" className="p-button-primary" icon="pi pi-plus" label="Add" onClick={this.openEditDialog}/> : ''}
                 {this.props.prepareRowsToImport ?
-                    <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
-                                customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/> : ''}
+                          <FileUpload chooseOptions={{label: 'Import', icon: 'pi pi-file-excel', className: `p-button-primary ${this.props.extendable ? 'ml-2' : ''}`}} mode="basic" auto
+                                    customUpload={true} accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" uploadHandler={this.importExcel}/>
+
+         : ''}
                 {this.props.prepareRowsToExport ? <Button type="button" className={`p-button-primary ${this.props.prepareRowsToImport || this.props.extendable ? 'ml-2' : ''}`} label="Export" icon="pi pi-file-excel" onClick={this.exportExcel}/> : ''}
+
+
+                {this.props.prepareRowsToImport ? <div className="flex align-items-center">
+                    <Tooltip target=".import-info-icon" />
+                    <i className="import-info-icon pi pi-question-circle p-text-secondary p-overlay-badge ml-2" data-pr-tooltip="Import does not replace existing rows. To replace existing row, remove it before importing." data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '1rem', cursor: 'pointer' }}/>
+                </div> : ''}
+
             </div>
 
             <div className="card">

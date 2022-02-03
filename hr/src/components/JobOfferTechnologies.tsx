@@ -1,7 +1,6 @@
 import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
-import {technologiesService, Technology} from "../services/technologies-service";
-import {ToggleButton} from "primereact/togglebutton";
+import {Importance, technologiesService, Technology} from "../services/technologies-service";
 import {MenuItem} from "primereact/menuitem";
 import {Utils} from "../utils";
 import {Dropdown} from "primereact/dropdown";
@@ -22,6 +21,11 @@ interface JobOfferTechnologiesState extends DefaultState {
 export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOfferTechnologiesState> {
 
     private readonly anyCategory: MenuItem = {label: 'Any'};
+    private readonly importances: Array<MenuItem> = [
+        {label: 'Not applicable', value: 'NOT_APPLICABLE'},
+        {label: 'Must have', value: 'MUST_HAVE'},
+        {label: 'Nice to have', value: 'NICE_TO_HAVE'}
+    ]
 
     state: JobOfferTechnologiesState = {
         category: this.anyCategory,
@@ -108,6 +112,12 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
         this.setSingle('category', value);
     }
 
+    private scoreTechnology = (technology: Technology, importance: Importance): void => {
+        technology.importance = importance;
+        this.setSelf('technologies');
+        this.props.onSelect(Utils.copy(this.state.technologies));
+    }
+
     render(): JSX.Element {
         return <div>
 
@@ -129,8 +139,12 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
                         let label: string = `${technology.category}/${technology.name}`;
 
                         if(label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1){
-                            return <ToggleButton className="token mx-1 my-1 flex justify-content-center align-items-center" key={index} onLabel={label} offLabel={label}
-                                                 checked={technology.checked} onChange={(e) => this.checkTechnology(technology, e.value)}/>;
+                            return <div className="p-button p-togglebutton p-component token developer-tech-token mx-1 my-1" key={index}>
+                                <div className="flex justify-content-center align-items-center">
+                                    <div className="mr-2">{label}</div>
+                                    <Dropdown className={Utils.isNotEmpty(technology.importance) && technology.importance !== Importance.NOT_APPLICABLE ? 'p-button-primary' : ''} value={technology.importance} options={this.importances} onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Importance"/>
+                                </div>
+                            </div>
                         }
 
                         return <React.Fragment key={index}/>

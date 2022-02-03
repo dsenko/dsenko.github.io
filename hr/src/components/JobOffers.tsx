@@ -6,7 +6,7 @@ import {Button} from "primereact/button";
 import {Dialog} from "primereact/dialog";
 import {Technologies} from "./Technologies";
 import {JobOfferTechnologies} from "./JobOfferTechnologies";
-import {Required, technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
+import {Importance, technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
 import {Utils} from "../utils";
 import {ExcelData, ExcelRow} from "../services/excel-service";
 
@@ -92,7 +92,7 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
         let selectedTechnologies: Array<Technology> = [];
         for (let technology of items) {
-            if (technology.checked) {
+            if (Utils.isNotEmpty(technology.importance)) {
                 selectedTechnologies.push(technology);
             }
         }
@@ -117,15 +117,15 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
                 return {
                     category: technology.category,
                     name: technology.name,
-                    required: (() => {
+                    importance: (() => {
 
                         for(let tech of jobOffer.technologies){
                             if(tech.key === technology.key){
-                                return Required.YES;
+                                return Utils.isEmpty(tech.importance) ? Importance.NOT_APPLICABLE : tech.importance;
                             }
                         }
 
-                        return Required.NO;
+                        return Importance.NOT_APPLICABLE;
 
                     })()
                 }
@@ -166,12 +166,12 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
                 name: row['sheet'],
                 technologies: row['rows'] ? row['rows'].map((technology: TechnologyExcelRow) => {
 
-                        if(technology.required === Required.YES){
+                        if(technology.importance !== Importance.NOT_APPLICABLE){
 
                             return {
                                 category: technology.category,
                                 name: technology.name,
-                                required: technology.required
+                                importance: technology.importance
                             }
 
                         }
