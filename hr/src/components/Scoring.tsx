@@ -102,9 +102,9 @@ export class Scoring extends State<ScoringProps, ScoringState> {
         function calcForImportance(developerScore: Score, givenScore: number, importance: Importance) {
 
 
-            if(importance === Importance.MUST_HAVE && (developerScore === Score.SCORE_NO || developerScore === Score.SCORE_NONE)){
+            if(importance === Importance.MUST_HAVE && (developerScore === Score.SCORE_NO || developerScore === Score.SCORE_NONE || Utils.isEmpty(developerScore))){
                 score = -999;
-            }else if(importance === Importance.MUST_HAVE && developerScore !== Score.SCORE_NO && developerScore !== Score.SCORE_NONE){
+            }else if(importance === Importance.MUST_HAVE && developerScore !== Score.SCORE_NO && developerScore !== Score.SCORE_NONE && Utils.isNotEmpty(developerScore)){
                 score += givenScore*2;
             }else {
                 score += givenScore;
