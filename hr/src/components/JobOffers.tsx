@@ -6,9 +6,10 @@ import {Button} from "primereact/button";
 import {Dialog} from "primereact/dialog";
 import {Technologies} from "./Technologies";
 import {JobOfferTechnologies} from "./JobOfferTechnologies";
-import {Importance, technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
-import {Utils} from "../utils";
+import {boolToYesNo, Importance, technologiesService, Technology, YesNo, yesNoToBool} from "../services/technologies-service";
+import {collectProperties, copy, findInArray, isEmpty, isNotEmpty, isNull, replaceInArray, sortBy} from "../utilities";
 import {ExcelData, ExcelRow} from "../services/excel-service";
+import * as Util from "util";
 
 interface JobOffersProps extends DefaultProps {
     extendable: boolean;
@@ -50,8 +51,9 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
     componentDidMount(): void {
 
-        this.setSingle('jobOffers', jobOffersService.getImmutableItems());
+        this.setSingle('jobOffers', jobOffersService.getItems());
         jobOffersService.on((items: Array<JobOffer>) => {
+            console.log('getting updated', items);
             this.setSingle('jobOffers', items);
         });
 
@@ -62,7 +64,7 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
         this.setMany({
             showChooseTechnologyDialog: true,
             row: row,
-            selectedTechnologies: Utils.copy(row.technologies)
+            selectedTechnologies: copy(row.technologies)
         });
 
     }
@@ -79,12 +81,13 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
     private onSubmitChooseTechnology = (): void => {
         this.state.row.technologies = this.state.selectedTechnologies;
-        this.state.jobOffers = Utils.replaceInArray(this.state.jobOffers, this.state.row, 'key');
+        this.state.jobOffers = replaceInArray(this.state.jobOffers, this.state.row, 'key');
         jobOffersService.replaceItems(this.state.jobOffers);
         this.onHideChooseTechnologyDialog();
     }
 
     onDataUpdate = (items: Array<TableRow>): void => {
+        console.log('onDataUpdate replacing', items);
         jobOffersService.replaceItems(items as Array<JobOffer>);
     }
 
@@ -92,7 +95,7 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
         let selectedTechnologies: Array<Technology> = [];
         for (let technology of items) {
-            if (Utils.isNotEmpty(technology.importance)) {
+            if (isNotEmpty(technology.importance)) {
                 selectedTechnologies.push(technology);
             }
         }
@@ -102,49 +105,28 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
     }
 
 
+    private prepareRowsToExport(rows: Array<JobOffer>): Array<ExcelRow> {
 
-
-    private prepareRowsToExport(rows: Array<TableRow>): Array<ExcelRow> {
-
-        let allTechnologies: Array<Technology> = technologiesService.getImmutableItems();
+        let allTechnologies: Array<Technology> = technologiesService.getItems();
 
         let exportRows: Array<ExcelRow> = [];
 
         for (let jobOffer of rows as Array<JobOffer>) {
 
-            let technologiesRows: Array<TechnologyExcelRow> = allTechnologies.map((technology: Technology) => {
+            let technologiesRows: Array<Technology> = allTechnologies.map((technology: Technology) => {
 
-                return {
-                    category: technology.category,
-                    name: technology.name,
-                    theory: technology.theory ? 'YES' : 'NO',
-                    importance: (() => {
+                let jobOfferTech: Technology = findInArray(jobOffer.technologies, technology.key, 'key');
 
-                        for(let tech of jobOffer.technologies){
-                            if(tech.key === technology.key){
-                                return Utils.isEmpty(tech.importance) ? Importance.NOT_APPLICABLE : tech.importance;
-                            }
-                        }
-
-                        return Importance.NOT_APPLICABLE;
-
-                    })()
-                }
+                return collectProperties(technology, ['category', 'name', ['theory', (theory: boolean) => {
+                    return boolToYesNo(theory);
+                }], ['importance', () => {
+                    return isNull(jobOfferTech) ? Importance.NOT_APPLICABLE : jobOfferTech.importance
+                }]])
 
             });
 
-            technologiesRows.sort((a1, a2) => {
-
-                let a1Name: string = `${a1.category}/${a1.name}`;
-                let a2Name: string = `${a2.category}/${a2.name}`;
-
-                if (a1Name < a2Name) {
-                    return -1;
-                }
-                if (a1Name > a2Name) {
-                    return 1;
-                }
-                return 0;
+            sortBy(technologiesRows, (a: Technology) => {
+                return `${a.category}/${a.name}`
             });
 
             exportRows.push({
@@ -158,24 +140,21 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
     }
 
-    private prepareRowsToImport = (excelData: ExcelData): Array<TableRow> => {
+    private prepareRowsToImport = (excelData: ExcelData): Array<JobOffer> => {
+
+        console.log('prepareRowsToImport joboffers', excelData);
 
         let rows: Array<JobOffer> = [];
         for(let row of excelData.importedRows){
 
             let jobOffer: JobOffer = {
                 name: row['sheet'],
-                technologies: row['rows'] ? row['rows'].map((technology: TechnologyExcelRow) => {
+                technologies: row['rows'] ? row['rows'].map((technology: Technology) => {
 
                         if(technology.importance !== Importance.NOT_APPLICABLE){
-
-                            return {
-                                category: technology.category,
-                                name: technology.name,
-                                theory: technology.theory === 'YES',
-                                importance: technology.importance
-                            }
-
+                            return collectProperties(technology, ['category', 'name', ['theory', (theory: YesNo) => {
+                                return yesNoToBool(theory);
+                            }], 'importance']);
                         }
 
                         return null;
@@ -190,21 +169,36 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
         }
 
-        return jobOffersService.regenerateKeys(rows);
+        let re = jobOffersService.regenerateKeys(rows);
+
+        console.log('re', JSON.stringify(re));
+        console.log(this.state.jobOffers);
+
+        return re;
 
     }
 
-    private prepareSingleRowToExport = (item: TableRow): Array<ExcelRow> => {
+    private prepareSingleRowToExport = (item: any): any => {
 
-        let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.jobOffers);
+        /*
+        input structure = JobOffer
+        output structure [{sheet: 'offer', rows: [Technology] }]
+         */
 
-        for(let row of rows){
-            if(row.sheet === item['name']){
-                return [row];
-            }
-        }
-
+        console.log('prepareSingleRowToExport joboffers', item);
         return [];
+
+        //
+        // let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.jobOffers);
+        //
+        // for(let row of rows){
+        //     if(row.sheet === item['name']){
+        //         return [row];
+        //     }
+        // }
+        //
+        // return [];
+
     }
 
     private customTemplates: Record<string, ((row: TableRow) => JSX.Element)> = {

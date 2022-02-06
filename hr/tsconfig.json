@@ -1,22 +1,25 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "target": "esnext",
-    "module": "esnext",
-    "jsx": "preserve",
-    "noImplicitAny": false,
-    "suppressImplicitAnyIndexErrors": true,
-    "strictPropertyInitialization": false,
-    "strictNullChecks" : false,
+    "experimentalDecorators": true,
+    "target": "es6",
+    "module": "commonjs",
     "moduleResolution": "node",
-    "strict": true,
-    "noEmit": true,
+    "sourceMap": true,
+    "declaration": true,
+    "outDir": "./lib",
+    "strict": false,
+    "strictFunctionTypes": true,
+    "preserveConstEnums": true,
     "allowJs": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "esModuleInterop": true
+    "baseUrl": ".",
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react"
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "tests",
+    "node_modules"
   ]
 }

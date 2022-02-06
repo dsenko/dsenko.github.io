@@ -2,10 +2,10 @@ import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {technologiesService, Technology} from "../services/technologies-service";
 import {MenuItem} from "primereact/menuitem";
-import {Utils} from "../utils";
 import {DeveloperTechnology, Score} from "../services/developers-service";
 import {Dropdown} from "primereact/dropdown";
 import {InputText} from "primereact/inputtext";
+import {copy, findInArray, isEmpty, isNotEmpty, replaceInArray, sameAs} from "../utilities";
 
 interface DeveloperTechnologiesProps extends DefaultProps {
     onSelect?: (items: Array<DeveloperTechnology>) => void;
@@ -46,7 +46,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
     }
 
     componentDidMount(): void {
-        this.setSingle('technologies', technologiesService.getImmutableItems());
+        this.setSingle('technologies', technologiesService.getItems());
         this.setCategories();
         this.scoreTechnologies();
         technologiesService.on(this.updateTechnologies);
@@ -58,7 +58,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
 
     componentDidUpdate(prevProps: Readonly<DeveloperTechnologiesProps>, prevState: Readonly<DeveloperTechnologiesState>, snapshot?: any) {
 
-        if (!Utils.sameAs(prevProps.scoredTechnologies, this.props.scoredTechnologies)) {
+        if (!sameAs(prevProps.scoredTechnologies, this.props.scoredTechnologies)) {
             this.scoreTechnologies();
         }
 
@@ -73,8 +73,8 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
     private scoreTechnologies(): void {
 
         for (let tech2 of this.props.scoredTechnologies) {
-            tech2.theory = Utils.findInArray(this.state.technologies, tech2.key, 'key').theory;
-            Utils.replaceInArray(this.state.technologies, tech2, 'key');
+            tech2.theory = findInArray(this.state.technologies, tech2.key, 'key').theory;
+            replaceInArray(this.state.technologies, tech2, 'key');
         }
 
         this.setSelf('technologies');
@@ -107,11 +107,11 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
     private scoreTechnology = (technology: DeveloperTechnology, score: Score): void => {
         technology.score = score;
         this.setSelf('technologies');
-        this.props.onSelect(Utils.copy(this.state.technologies));
+        this.props.onSelect(copy(this.state.technologies));
     }
 
     private onChangeFilter = (value: string): void => {
-        this.setSingle('filter', Utils.isEmpty(value) ? '' : value);
+        this.setSingle('filter', isEmpty(value) ? '' : value);
     }
 
     private onCategoryChange = (value: MenuItem): void => {
@@ -146,7 +146,7 @@ export class DeveloperTechnologies extends State<DeveloperTechnologiesProps, Dev
                         if (label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1) {
                             return <div className="flex p-button p-togglebutton p-component developer-tech-token" key={index}>
                                 <div className="flex-1 text-left pr-2">{label}</div>
-                                <Dropdown className={Utils.isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores}
+                                <Dropdown className={isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''} value={technology.score} options={technology.theory ? this.theoryScores : this.markScores}
                                           onChange={(e) => this.scoreTechnology(technology, e.value)} placeholder="Score"/>
                             </div>
                         }

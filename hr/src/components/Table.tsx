@@ -3,7 +3,6 @@ import {DefaultProps, DefaultState, State} from "../state";
 import {DataTable} from "primereact/datatable";
 import {Column, ColumnProps} from "primereact/column";
 import {InputText} from "primereact/inputtext";
-import {Utils} from "../utils";
 import {Button} from "primereact/button";
 import {Dialog} from "primereact/dialog";
 import {confirmDialog} from "primereact/confirmdialog";
@@ -12,6 +11,11 @@ import {FileUpload, FileUploadHandlerParam} from "primereact/fileupload";
 import {Checkbox} from "primereact/checkbox";
 import {Tooltip} from "primereact/tooltip";
 import {FilterMatchMode} from "primereact/api";
+import {arrayToMap, copy, removeFromArray, replaceInArray, uniqBy} from "../utilities";
+
+export interface TableRow {
+}
+
 
 export enum EditMode {
     EDIT,
@@ -30,8 +34,6 @@ export interface TableColumn extends ColumnProps {
     type: TableColumnType;
 }
 
-export interface TableRow {
-}
 
 interface TableProps extends DefaultProps {
     name: string;
@@ -41,9 +43,9 @@ interface TableProps extends DefaultProps {
     cols: Array<TableColumn>;
     customTemplates: Record<string, ((row: TableRow) => JSX.Element)>;
     onDataUpdate: (items: Array<TableRow>) => void;
-    prepareRowsToImport: (excelData: ExcelData) => Array<TableRow>;
-    prepareRowsToExport: (items: Array<TableRow>) => Array<ExcelRow>;
-    prepareSingleRowToExport: (item: TableRow) => Array<ExcelRow>;
+    prepareRowsToImport: (excelData: any) => any;
+    prepareRowsToExport: (items: any) => any;
+    prepareSingleRowToExport: (item: any) => any;
 }
 
 interface TableState extends DefaultState {
@@ -90,7 +92,7 @@ export class Table extends State<TableProps, TableState> {
     private emptyRow: TableRow = {};
 
     componentDidMount() {
-        this.setSingle('cols', Utils.arrayToMap(this.props.cols, 'field'));
+        this.setSingle('cols', arrayToMap(this.props.cols, 'field'));
         this.initEmptyRow();
         this.setEmptyRow();
     }
@@ -127,7 +129,10 @@ export class Table extends State<TableProps, TableState> {
     }
 
     private mergeImportedRows(rows: Array<TableRow>): void {
-        this.setSingle('rows', Utils.uniqBy(this.state.rows.concat(rows), 'key'));
+        console.log('mergeImportedRows', rows);
+        let uniq = uniqBy(this.state.rows.concat(rows), 'key');
+        console.log('uniq rows', uniq);
+        this.setSingle('rows', uniq);
     }
 
     private exportSingleRowExcel(row: TableRow): void {
@@ -223,7 +228,7 @@ export class Table extends State<TableProps, TableState> {
     }
 
     private setEmptyRow(): void {
-        this.setSingle('row', Utils.copy(this.emptyRow));
+        this.setSingle('row', copy(this.emptyRow));
     }
 
     private clearFilter = () => {
@@ -288,9 +293,9 @@ export class Table extends State<TableProps, TableState> {
             acceptLabel: 'Remove',
             rejectLabel: 'Cancel',
             accept: async () => {
-                Utils.removeFromArray(this.state.rows, row);
+                removeFromArray(this.state.rows, row);
                 this.setEmptyRow();
-                this.props.onDataUpdate(Utils.copy(this.state.rows));
+                this.props.onDataUpdate(copy(this.state.rows));
             },
         });
 
@@ -304,7 +309,7 @@ export class Table extends State<TableProps, TableState> {
         });
 
         if (row) {
-            this.setSingle('row', Utils.copy(row));
+            this.setSingle('row', copy(row));
         } else {
             this.setEmptyRow()
         }
@@ -318,13 +323,13 @@ export class Table extends State<TableProps, TableState> {
     private onSubmitEdit = (): void => {
 
         if (this.state.editMode === EditMode.ADD) {
-            this.state.rows.push(Utils.copy(this.state.row));
+            this.state.rows.push(copy(this.state.row));
         } else {
-            this.state.rows = Utils.replaceInArray(this.state.rows, this.state.row, 'key');
+            this.state.rows = replaceInArray(this.state.rows, this.state.row, 'key');
         }
 
         this.setEmptyRow();
-        this.props.onDataUpdate(Utils.copy(this.state.rows));
+        this.props.onDataUpdate(copy(this.state.rows));
         this.onHideEditDialog();
 
     }

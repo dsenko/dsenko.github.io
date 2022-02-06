@@ -2,9 +2,9 @@ import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Importance, technologiesService, Technology} from "../services/technologies-service";
 import {MenuItem} from "primereact/menuitem";
-import {Utils} from "../utils";
 import {Dropdown} from "primereact/dropdown";
 import {InputText} from "primereact/inputtext";
+import {copy, isEmpty, isNotEmpty, replaceInArray, sameAs} from "../utilities";
 
 interface JobOfferTechnologiesProps extends DefaultProps {
     onSelect?: (items: Array<Technology>) => void;
@@ -35,7 +35,7 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
     }
 
     componentDidMount(): void {
-        this.setSingle('technologies', technologiesService.getImmutableItems());
+        this.setSingle('technologies', technologiesService.getItems());
         this.setCategories();
         this.checkTechnologies();
         technologiesService.on(this.updateTechnologies);
@@ -47,7 +47,7 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
 
     componentDidUpdate(prevProps: Readonly<JobOfferTechnologiesProps>, prevState: Readonly<JobOfferTechnologiesState>, snapshot?: any) {
 
-        if (!Utils.sameAs(prevProps.selectedTechnologies, this.props.selectedTechnologies)) {
+        if (!sameAs(prevProps.selectedTechnologies, this.props.selectedTechnologies)) {
             this.checkTechnologies();
         }
 
@@ -62,8 +62,8 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
     private checkTechnologies(): void {
 
         for (let tech2 of this.props.selectedTechnologies) {
-            tech2.checked = true;
-            Utils.replaceInArray(this.state.technologies, tech2, 'key');
+            // tech2.importance = true;
+            replaceInArray(this.state.technologies, tech2, 'key');
         }
 
         this.setSelf('technologies');
@@ -93,14 +93,8 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
 
     }
 
-    private checkTechnology = (technology: Technology, checked: boolean): void => {
-        technology.checked = checked;
-        this.setSelf('technologies');
-        this.props.onSelect(Utils.copy(this.state.technologies));
-    }
-
     private onChangeFilter = (value: string): void => {
-        this.setSingle('filter', Utils.isEmpty(value) ? '' : value);
+        this.setSingle('filter', isEmpty(value) ? '' : value);
     }
 
     private onCategoryChange = (value: MenuItem): void => {
@@ -115,7 +109,7 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
     private scoreTechnology = (technology: Technology, importance: Importance): void => {
         technology.importance = importance;
         this.setSelf('technologies');
-        this.props.onSelect(Utils.copy(this.state.technologies));
+        this.props.onSelect(copy(this.state.technologies));
     }
 
     render(): JSX.Element {
@@ -141,7 +135,7 @@ export class JobOfferTechnologies extends State<JobOfferTechnologiesProps, JobOf
                         if (label.toLowerCase().indexOf(this.state.filter.toLowerCase()) > -1) {
                             return <div className="flex p-button p-togglebutton p-component developer-tech-token" key={index}>
                                 <div className="flex-1 text-left pr-2">{label}</div>
-                                <Dropdown className={Utils.isNotEmpty(technology.importance) && technology.importance !== Importance.NOT_APPLICABLE ? 'p-button-primary' : ''} value={technology.importance} options={this.importances} onChange={(e) => this.scoreTechnology(technology, e.value)}
+                                <Dropdown className={isNotEmpty(technology.importance) && technology.importance !== Importance.NOT_APPLICABLE ? 'p-button-primary' : ''} value={technology.importance} options={this.importances} onChange={(e) => this.scoreTechnology(technology, e.value)}
                                           placeholder="Importance"/>
                             </div>
                         }

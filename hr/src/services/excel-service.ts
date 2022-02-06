@@ -1,25 +1,36 @@
 import {saveAs} from 'file-saver';
-import {TableRow} from "../components/Table";
 import {FileUploadHandlerParam} from "primereact/fileupload";
+import {copy} from "../utilities";
 
 export interface ExcelRow {
     sheet?: string;
-    rows?: Array<ExcelRow>;
-}
-
-export interface ExcelColumn {
-    field: string;
-    header: string;
+    rows?: Array<any>;
 }
 
 export interface ExcelData {
-    importedCols: Array<ExcelColumn>;
-    importedRows: Array<TableRow>;
+    importedRows: Array<ExcelRow>;
 }
 
 export class ExcelService {
 
-   public importExcel = async (event: FileUploadHandlerParam, fn: (excelData: ExcelData) => Array<TableRow>) : Promise<Array<ExcelRow>> => {
+    private importSheet(sheetName: string, data: any, importedRows: Array<ExcelRow>) {
+
+        const cols: any = data[0];
+        data.shift();
+
+        importedRows.push({
+            sheet: sheetName,
+            rows: data.map(d => {
+                return cols.reduce((obj, c, i) => {
+                    obj[c] = d[i];
+                    return obj;
+                }, {});
+            })
+        });
+
+    }
+
+    importExcel = async (event: FileUploadHandlerParam, prepareRowsToImport: (excelData: ExcelData) => Array<any>): Promise<Array<ExcelRow>> => {
 
         return new Promise((resolve) => {
 
@@ -31,80 +42,52 @@ export class ExcelService {
                 reader.onload = (e) => {
 
                     try {
-                        const wb = xlsx.read(e.target.result, { type: 'array' });
 
-                        let importedCols = null;
-                        let importedRows = [];
+                        const wb = xlsx.read(e.target.result, {type: 'array'});
 
-                        for(let sheetName of wb.SheetNames){
+                        let importedRows: Array<ExcelRow> = [];
 
+                        for (let sheetName of wb.SheetNames) {
                             const ws = wb.Sheets[sheetName];
-                            const data = xlsx.utils.sheet_to_json(ws, { header: 1 });
-
-                            // Prepare DataTable
-                            const cols: any = data[0];
-                            data.shift();
-
-                            if(importedCols === null){
-                                importedCols = cols.map(col => ({ field: col, header: this.toCapitalize(col) }));
-                            }
-
-                            importedRows.push({
-                                sheet: sheetName,
-                                rows: data.map(d => {
-                                    return cols.reduce((obj, c, i) => {
-                                        obj[c] = d[i];
-                                        return obj;
-                                    }, {});
-                                })
-                            });
-
+                            const data = xlsx.utils.sheet_to_json(ws, {header: 1});
+                            this.importSheet(sheetName, data, importedRows);
                         }
 
-
-                        resolve(fn({
-                            importedCols: importedCols,
+                        resolve(prepareRowsToImport({
                             importedRows: importedRows
                         }));
 
-                    }catch (err){
+                    } catch (err) {
                         console.warn(err);
-                        event.options.clear();
                         resolve(null);
                     }
 
+                    event.options.clear();
 
                 };
 
                 reader.readAsArrayBuffer(file);
+
             });
 
         });
 
-
     }
 
-    private toCapitalize(s) {
-        return s.charAt(0).toUpperCase() + s.slice(1);
-    }
+    exportExcel = (name: string, inputData: Array<ExcelRow>) : void => {
 
-    public exportExcel = (name: string, data: Array<ExcelRow>) => {
+        let data: Array<ExcelRow> = copy(inputData);
 
         import('xlsx').then(xlsx => {
 
-            if(data.length > 0){
+            if (data.length > 0) {
 
                 let sheets = {};
                 let sheetsNames = [];
 
-                if(data[0].sheet !== undefined){
-                    for(let data1 of data){
-                        sheetsNames.push(data1['sheet']);
-                        sheets[data1['sheet']] = xlsx.utils.json_to_sheet(data1['rows']);
-                    }
-                }else{
-                    sheetsNames = ['data'];
-                    sheets['data'] = xlsx.utils.json_to_sheet(data);
+                for (let data1 of data) {
+                    sheetsNames.push(data1['sheet']);
+                    sheets[data1['sheet']] = xlsx.utils.json_to_sheet(data1['rows']);
                 }
 
                 const workbook = {Sheets: sheets, SheetNames: sheetsNames};
@@ -126,7 +109,7 @@ export class ExcelService {
         saveAs(data, fileName + '_export_' + new Date().getTime() + EXCEL_EXTENSION);
     }
 
-    exportSingleExcel(name: string, row: any) {
+    exportSingleExcel(name: string, row: Array<ExcelRow>) {
         this.exportExcel(name, row);
     }
 

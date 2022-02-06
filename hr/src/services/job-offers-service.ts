@@ -1,11 +1,5 @@
 import {DataItem, DataService} from "./data-service";
 import {Technology} from "./technologies-service";
-import {ExcelRow} from "./excel-service";
-
-export interface JobOfferExcelRow extends ExcelRow {
-    name: string;
-    technologies: string;
-}
 
 export interface JobOffer extends DataItem {
     name: string;

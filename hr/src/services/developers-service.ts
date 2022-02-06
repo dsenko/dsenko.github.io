@@ -1,6 +1,14 @@
 import {DataItem, DataService} from "./data-service";
 import {Technology} from "./technologies-service";
-import {ExcelRow} from "./excel-service";
+
+export interface Developer extends DataItem {
+    fullName: string;
+    technologies: Array<DeveloperTechnology>;
+}
+
+export interface DeveloperTechnology extends Technology {
+    score: Score;
+}
 
 export enum Score {
     SCORE_NONE = 'NONE',
@@ -13,24 +21,8 @@ export enum Score {
     SCORE_5 = '5',
 }
 
-export function mapFromNumericScore(score: number | string) : Score {
-    return Score['SCORE_'+score];
-}
-
-export interface DeveloperTechnologyExcelRow extends ExcelRow {
-    category: string;
-    name: string;
-    score: string;
-    theory: string;
-}
-
-export interface DeveloperTechnology extends Technology {
-    score: Score;
-}
-
-export interface Developer extends DataItem {
-    fullName: string;
-    technologies: Array<DeveloperTechnology>;
+export const mapFromNumericScore = (score: number | string): Score => {
+    return Score['SCORE_' + score];
 }
 
 export class DevelopersService extends DataService<Developer> {

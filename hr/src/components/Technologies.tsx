@@ -1,12 +1,10 @@
 import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
-import {technologiesService, Technology, TechnologyExcelRow} from "../services/technologies-service";
+import {boolToYesNo, technologiesService, Technology, YesNo, yesNoToBool} from "../services/technologies-service";
 import {ExcelData, ExcelRow} from "../services/excel-service";
-import {JobOffer, jobOffersService} from "../services/job-offers-service";
 import {Checkbox} from "primereact/checkbox";
-import {Button} from "primereact/button";
-import {Utils} from "../utils";
+import {collectProperties, sortBy} from "../utilities";
 
 interface TechnologiesProps extends DefaultProps {
     extendable?: boolean;
@@ -49,7 +47,7 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
 
     private customTemplates: Record<string, ((row: TableRow) => JSX.Element)> = {
         'theory': (row: TableRow) => {
-          return  <div>
+            return <div>
                 <Checkbox checked={(row as Technology).theory} onChange={(e) => this.onCheckboxValueChange.bind(this, e.checked, row as Technology)}/>
             </div>;
         }
@@ -60,7 +58,7 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
     }
 
     componentDidMount(): void {
-        this.setSingle('technologies', technologiesService.getImmutableItems());
+        this.setSingle('technologies', technologiesService.getItems());
         technologiesService.on(this.updateTechnologies);
     }
 
@@ -72,50 +70,34 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
         this.setSingle('technologies', items);
     }
 
-    private onDataUpdate = (items: Array<TableRow>): void => {
-        technologiesService.replaceItems(items as Array<Technology>);
+    private onDataUpdate = (items: Array<Technology>): void => {
+        technologiesService.replaceItems(items);
     }
 
-    private prepareRowsToExport(rows: Array<TableRow>): Array<TechnologyExcelRow> {
+    private prepareRowsToExport(rows: Array<Technology>): Array<ExcelRow> {
 
-        let exportRows: Array<TechnologyExcelRow> = [];
-        for (let technology of rows as Array<Technology>) {
+        let exportRows: Array<ExcelRow> = [{
+            sheet: 'Technologies',
+            rows: rows.map((technology: Technology) => {
+                return collectProperties(technology, ['category', 'name', ['theory', (theory: boolean) => {
+                    return boolToYesNo(theory);
+                }]])
+            })
+        }];
 
-            exportRows.push({
-                category: technology.category,
-                name: technology.name,
-                theory: technology.theory ? 'YES' : 'NO'
-            });
-
-        }
-
-        exportRows.sort((a1, a2) => {
-            if (a1.category < a2.category) {
-                return -1;
-            }
-            if (a1.category > a2.category) {
-                return 1;
-            }
-            return 0;
-        });
+        sortBy(exportRows[0].rows, 'category');
 
         return exportRows;
 
     }
 
-    private prepareRowsToImport = (excelData: ExcelData): Array<TableRow> => {
+    private prepareRowsToImport = (excelData: ExcelData): Array<Technology> => {
 
         let rows: Array<Technology> = [];
-        for(let row of (excelData.importedRows[0] as ExcelRow).rows){
-
-            let technology: Technology = {
-                category: row['category'],
-                name: row['name'],
-                theory: row['theory'] === 'YES'
-            };
-
-            rows.push(technology);
-
+        for (let row of (excelData.importedRows[0] as ExcelRow).rows) {
+            rows.push(collectProperties(row, ['category', 'name', ['theory', (theory: YesNo) => {
+                return yesNoToBool(theory);
+            }]]));
         }
 
         return technologiesService.regenerateKeys(rows);
@@ -123,8 +105,14 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
     }
 
     render(): JSX.Element {
-        return <Table name="technologies" rows={this.state.technologies} cols={this.state.cols} extendable={this.props.extendable} customTemplates={this.customTemplates}
-                      onDataUpdate={this.onDataUpdate} prepareRowsToExport={this.prepareRowsToExport} prepareRowsToImport={this.prepareRowsToImport}/>;
+        return <Table name="technologies"
+                      rows={this.state.technologies}
+                      cols={this.state.cols}
+                      extendable={this.props.extendable}
+                      customTemplates={this.customTemplates}
+                      onDataUpdate={this.onDataUpdate}
+                      prepareRowsToExport={this.prepareRowsToExport}
+                      prepareRowsToImport={this.prepareRowsToImport}/>;
     }
 
 

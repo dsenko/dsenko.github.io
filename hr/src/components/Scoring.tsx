@@ -5,7 +5,7 @@ import {Developer, developersService, DeveloperTechnology, Score} from "../servi
 import {ExcelRow} from "../services/excel-service";
 import {JobOffer, jobOffersService} from "../services/job-offers-service";
 import {Importance, technologiesService, Technology} from "../services/technologies-service";
-import {Utils} from "../utils";
+import {findInArray, isEmpty, isNotEmpty} from "../utilities";
 
 interface DeveloperScore extends TableRow, ExcelRow {
     developer: string;
@@ -57,8 +57,8 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
     componentDidMount(): void {
 
-        this.setSingle('developers', developersService.getImmutableItems());
-        this.setSingle('jobOffers', jobOffersService.getImmutableItems());
+        this.setSingle('developers', developersService.getItems());
+        this.setSingle('jobOffers', jobOffersService.getItems());
         this.prepareScores();
 
         developersService.on((items: Array<Developer>) => {
@@ -105,28 +105,21 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
         function calcForImportance(developerScore: Score, givenScore: number, importance: Importance) {
 
-            console.log(`calcForImportance ${developerScore} ${givenScore} ${importance}`);
-            if(importance === Importance.MUST_HAVE && (developerScore === Score.SCORE_NO || developerScore === Score.SCORE_NONE || Utils.isEmpty(developerScore))){
+            if(importance === Importance.MUST_HAVE && (developerScore === Score.SCORE_NO || developerScore === Score.SCORE_NONE || isEmpty(developerScore))){
                 score = -999;
-            }else if(importance === Importance.MUST_HAVE && developerScore !== Score.SCORE_NO && developerScore !== Score.SCORE_NONE && Utils.isNotEmpty(developerScore)){
+            }else if(importance === Importance.MUST_HAVE && developerScore !== Score.SCORE_NO && developerScore !== Score.SCORE_NONE && isNotEmpty(developerScore)){
                 score += givenScore*2;
             }else {
                 score += givenScore;
             }
 
-            console.log(`after score ${score}`);
-
         }
-
-        console.log('developerTechnologies', developerTechnologies);
 
         for(let jobOfferTech of jobOfferTechnologies){
 
             if(jobOfferTech.importance === Importance.MUST_HAVE || jobOfferTech.importance === Importance.NICE_TO_HAVE){
 
-                let developerTech: DeveloperTechnology = Utils.findInArray(developerTechnologies, jobOfferTech.key, 'key');
-
-                console.log('developerTech'+developerTech);
+                let developerTech: DeveloperTechnology = findInArray(developerTechnologies, jobOfferTech.key, 'key');
 
                 if(developerTech === null){
                     developerTech = {
@@ -136,37 +129,27 @@ export class Scoring extends State<ScoringProps, ScoringState> {
                     } as DeveloperTechnology;
                 }
 
-                console.log('developerTech', developerTech);
-                console.log('developerTech.score'+developerTech.score);
-
                 switch (developerTech.score){
                     case Score.SCORE_NONE:
                     case Score.SCORE_NO:
-                        console.log('SCORE_NONE SCORE_NO:');
                         calcForImportance(developerTech.score,-2.5, jobOfferTech.importance);
                         break;
                     case Score.SCORE_YES:
-                        console.log('SCORE_YES');
                         calcForImportance(developerTech.score,5, jobOfferTech.importance);
                         break;
                     case Score.SCORE_1:
-                        console.log('SCORE_1');
                         calcForImportance(developerTech.score,1, jobOfferTech.importance);
                         break;
                     case Score.SCORE_2:
-                        console.log('SCORE_2');
                         calcForImportance(developerTech.score,2, jobOfferTech.importance);
                         break;
                     case Score.SCORE_3:
-                        console.log('SCORE_3');
                         calcForImportance(developerTech.score,3, jobOfferTech.importance);
                         break;
                     case Score.SCORE_4:
-                        console.log('SCORE_4');
                         calcForImportance(developerTech.score,4, jobOfferTech.importance);
                         break;
                     case Score.SCORE_5:
-                        console.log('SCORE_5');
                         calcForImportance(developerTech.score,5, jobOfferTech.importance);
                         break;
                 }
@@ -179,22 +162,22 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
     }
 
-    private prepareRowsToExport(rows: Array<TableRow>): Array<ExcelRow> {
+    private prepareRowsToExport(rows: any): any {
 
-        (rows as Array<DeveloperScore>).sort((a1, a2) => {
-            if (a1.developer < a2.developer) {
-                return -1;
-            }
-            if (a1.developer > a2.developer) {
-                return 1;
-            }
-            return 0;
-        });
-
-        return [{
-            sheet: 'Scoring',
-            rows: rows
-        }];
+        // (rows as Array<DeveloperScore>).sort((a1, a2) => {
+        //     if (a1.developer < a2.developer) {
+        //         return -1;
+        //     }
+        //     if (a1.developer > a2.developer) {
+        //         return 1;
+        //     }
+        //     return 0;
+        // });
+        //
+        // return [{
+        //     sheet: 'Scoring',
+        //     rows: rows
+        // }];
 
     }
 
