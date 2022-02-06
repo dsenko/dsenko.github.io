@@ -11,7 +11,8 @@ import {FileUpload, FileUploadHandlerParam} from "primereact/fileupload";
 import {Checkbox} from "primereact/checkbox";
 import {Tooltip} from "primereact/tooltip";
 import {FilterMatchMode} from "primereact/api";
-import {arrayToMap, copy, removeFromArray, replaceInArray, uniqBy} from "../utilities";
+import {arrayToMap, copy, removeFromArray, replaceInArray, uniq} from "../utilities";
+import {DataItem, DataService} from "../services/data-service";
 
 export interface TableRow {
 }
@@ -24,7 +25,6 @@ export enum EditMode {
 
 export enum TableColumnType {
     TEXT,
-    SELECT,
     BUTTON,
     CHECKBOX
 }
@@ -42,7 +42,7 @@ interface TableProps extends DefaultProps {
     rows: Array<TableRow>;
     cols: Array<TableColumn>;
     customTemplates: Record<string, ((row: TableRow) => JSX.Element)>;
-    onDataUpdate: (items: Array<TableRow>) => void;
+    dataService: DataService<any>;
     prepareRowsToImport: (excelData: any) => any;
     prepareRowsToExport: (items: any) => any;
     prepareSingleRowToExport: (item: any) => any;
@@ -52,7 +52,6 @@ interface TableState extends DefaultState {
     showEditDialog: boolean;
     showChooseTechnologyDialog: boolean;
     row: TableRow;
-    rows: Array<TableRow>;
     cols: Record<string, TableColumn>;
     selection: Array<TableRow>;
     editMode: EditMode;
@@ -69,17 +68,16 @@ export class Table extends State<TableProps, TableState> {
         extendable: false,
         actions: true,
         customTemplates: {},
-        onDataUpdate: () => {
-        },
+        dataService: null,
         prepareRowsToExport: null,
         prepareRowsToImport: null,
         prepareSingleRowToExport: null
     }
+
     state: TableState = {
         showEditDialog: false,
         showChooseTechnologyDialog: false,
         row: {},
-        rows: [],
         cols: {},
         selection: [],
         editMode: EditMode.ADD,
@@ -97,18 +95,10 @@ export class Table extends State<TableProps, TableState> {
         this.setEmptyRow();
     }
 
-    componentDidUpdate(prevProps: Readonly<TableProps>, prevState: Readonly<TableState>, snapshot?: any) {
-
-        if (prevProps.rows.length !== this.props.rows.length) {
-            this.setSingle('rows', this.props.rows);
-        }
-
-    }
-
     private exportExcel = () => {
 
         try {
-            excelService.exportExcel(this.props.name, this.props.prepareRowsToExport ? this.props.prepareRowsToExport(this.state.rows) : this.state.rows);
+            excelService.exportExcel(this.props.name, this.props.prepareRowsToExport ? this.props.prepareRowsToExport(this.props.rows) : this.props.rows);
         } catch (e) {
             console.warn(e);
         }
@@ -119,7 +109,6 @@ export class Table extends State<TableProps, TableState> {
 
         try {
             this.mergeImportedRows(await excelService.importExcel(e, this.props.prepareRowsToImport));
-            this.props.onDataUpdate(this.state.rows);
         } catch (e) {
             console.warn(e);
         }
@@ -128,11 +117,11 @@ export class Table extends State<TableProps, TableState> {
 
     }
 
+    componentDidUpdate(prevProps: Readonly<TableProps>, prevState: Readonly<TableState>, snapshot?: any) {
+    }
+
     private mergeImportedRows(rows: Array<TableRow>): void {
-        console.log('mergeImportedRows', rows);
-        let uniq = uniqBy(this.state.rows.concat(rows), 'key');
-        console.log('uniq rows', uniq);
-        this.setSingle('rows', uniq);
+        this.props.dataService.mergeItems(rows);
     }
 
     private exportSingleRowExcel(row: TableRow): void {
@@ -293,9 +282,8 @@ export class Table extends State<TableProps, TableState> {
             acceptLabel: 'Remove',
             rejectLabel: 'Cancel',
             accept: async () => {
-                removeFromArray(this.state.rows, row);
+                this.props.dataService.remove(row);
                 this.setEmptyRow();
-                this.props.onDataUpdate(copy(this.state.rows));
             },
         });
 
@@ -323,13 +311,12 @@ export class Table extends State<TableProps, TableState> {
     private onSubmitEdit = (): void => {
 
         if (this.state.editMode === EditMode.ADD) {
-            this.state.rows.push(copy(this.state.row));
+            this.props.dataService.add(this.state.row);
         } else {
-            this.state.rows = replaceInArray(this.state.rows, this.state.row, 'key');
+            this.props.dataService.replace(this.state.row);
         }
 
         this.setEmptyRow();
-        this.props.onDataUpdate(copy(this.state.rows));
         this.onHideEditDialog();
 
     }

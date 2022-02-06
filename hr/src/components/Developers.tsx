@@ -1,14 +1,15 @@
 import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
-import {Developer, developersService, DeveloperTechnology, mapFromNumericScore, Score} from "../services/developers-service";
+import {Developer, developersService, mapFromNumericScore, Score} from "../services/developers-service";
 import {Button} from "primereact/button";
 import {Dialog} from "primereact/dialog";
-import {Technologies} from "./Technologies";
-import {technologiesService, Technology} from "../services/technologies-service";
+import {collectProperties, findInArray, isEmpty, isNotEmpty, sortBy} from "../utilities";
+import {boolToYesNo, technologiesService, Technology, YesNo, yesNoToBool} from "../services/technologies-service";
 import {ExcelData, ExcelRow} from "../services/excel-service";
-import {DeveloperTechnologies} from "./DeveloperTechnologies";
-import {collectProperties, copy, isNotEmpty, replaceInArray, sortBy} from "../utilities";
+import {TechnologiesOptions} from "./TechnologiesOptions";
+import {MenuItem} from "primereact/menuitem";
+import {Dropdown} from "primereact/dropdown";
 
 interface DevelopersProps extends DefaultProps {
     extendable: boolean;
@@ -17,11 +18,25 @@ interface DevelopersProps extends DefaultProps {
 interface DevelopersState extends DefaultState {
     developers: Array<Developer>;
     row: Developer;
-    scoredTechnologies: Array<DeveloperTechnology>;
     showChooseTechnologyDialog: boolean;
 }
 
 export class Developers extends State<DevelopersProps, DevelopersState> {
+
+    private readonly theoryScores: Array<MenuItem> = [
+        {label: 'None', value: Score.SCORE_NONE},
+        {label: 'Yes', value: Score.SCORE_YES},
+        {label: 'No', value: Score.SCORE_NO}
+    ]
+
+    private readonly markScores: Array<MenuItem> = [
+        {label: 'None', value: Score.SCORE_NONE},
+        {label: '1', value: Score.SCORE_1},
+        {label: '2', value: Score.SCORE_2},
+        {label: '3', value: Score.SCORE_3},
+        {label: '4', value: Score.SCORE_4},
+        {label: '5', value: Score.SCORE_5}
+    ]
 
     private cols: Array<TableColumn> = [
         {
@@ -44,25 +59,26 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
     state: DevelopersState = {
         developers: [],
         row: null,
-        scoredTechnologies: [],
         showChooseTechnologyDialog: false
     }
 
     componentDidMount(): void {
+        developersService.on(this.onDevelopersUpdate);
+    }
 
-        this.setSingle('developers', developersService.getItems());
-        developersService.on((items: Array<Developer>) => {
-            this.setSingle('developers', items);
-        });
+    componentWillUnmount() {
+        developersService.off(this.onDevelopersUpdate);
+    }
 
+    private onDevelopersUpdate = (items: Array<Developer>): void => {
+        this.setSingle('developers', items);
     }
 
     private openChooseTechnologyDialog = (row: Developer): void => {
 
         this.setMany({
             showChooseTechnologyDialog: true,
-            row: row,
-            scoredTechnologies: copy(row.technologies)
+            row: row
         });
 
     }
@@ -71,133 +87,107 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
 
         this.setMany({
             showChooseTechnologyDialog: false,
-            row: null,
-            scoredTechnologies: []
+            row: null
         });
 
     }
 
     private onSubmitChooseTechnology = (): void => {
-        this.state.row.technologies = copy(this.state.scoredTechnologies);
-        this.state.developers = replaceInArray(this.state.developers, this.state.row, 'key');
-        developersService.replaceItems(this.state.developers);
+        developersService.replace(this.state.row);
         this.onHideChooseTechnologyDialog();
     }
 
-    onDataUpdate = (items: Array<TableRow>): void => {
-        developersService.replaceItems(items as Array<Developer>);
+    private onChange = (items: Array<Technology>): void => {
+        this.state.row.technologies = items;
+        this.setSelf('row');
     }
 
-    private onTechnologiesSelect = (items: Array<DeveloperTechnology>): void => {
+    private prepareRowsToExport(rows: Array<Developer>): Array<ExcelRow> {
 
-        let scoredTechnologies: Array<DeveloperTechnology> = [];
-        for (let technology of items) {
-            if (technology.score !== Score.SCORE_NONE && isNotEmpty(technology.score)) {
-                scoredTechnologies.push(technology);
+        let allTechnologies: Array<Technology> = technologiesService.getItems();
+
+        let exportRows: Array<ExcelRow> = [];
+        for (let developer of rows) {
+
+            if (isEmpty(developer.technologies)) {
+                developer.technologies = [];
+            }
+
+            let technologiesRows: Array<Technology> = allTechnologies.map((technology: Technology) => {
+
+                return collectProperties(technology, ['category', 'name', ['theory', (theory: boolean) => {
+                    return boolToYesNo(theory);
+                }], ['score', () => {
+                    let developerTech: Technology = findInArray(developer.technologies, technology.key, 'key') || {};
+                    return developerTech.score || Score.SCORE_NONE;
+                }]]);
+
+            });
+
+            sortBy(technologiesRows, (developerTech: Technology) => {
+                return `${developerTech.category}/${developerTech.name}`
+            });
+
+            exportRows.push({
+                sheet: developer.fullName,
+                rows: technologiesRows
+            });
+
+        }
+
+        return exportRows;
+
+    }
+
+    private prepareRowsToImport = (excelData: ExcelData): Array<Developer> => {
+
+        let rows: Array<Developer> = [];
+        for (let row of excelData.importedRows) {
+
+            let developer: Developer = {
+                fullName: row['sheet'],
+                technologies: row['rows'] ? row['rows'].map((technology: Technology) => {
+
+                    if (technology.score === Score.SCORE_NONE) {
+                        return null;
+                    }
+
+                    return collectProperties(technology, ['category', 'name', ['theory', (theory: YesNo) => {
+                        return yesNoToBool(theory);
+                    }], ['score', (score: number) => {
+                        return mapFromNumericScore(score);
+                    }]]);
+
+                }).filter((t) => {
+                    return t !== null;
+                }) : []
+            };
+
+            developer.technologies = technologiesService.supplyWithKeys(developer.technologies);
+
+            technologiesService.mergeItems(developer.technologies.map((technology: Technology) => {
+                return collectProperties(technology, ['category', 'name', 'theory']);
+            }));
+
+            rows.push(developer);
+
+        }
+
+        return rows;
+
+    }
+
+    private prepareSingleRowToExport = (item: Developer): Array<ExcelRow> => {
+
+        let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.developers);
+
+        for (let row of rows) {
+            if (row.sheet === item['fullName']) {
+                return [row];
             }
         }
 
-        this.setSingle('scoredTechnologies', scoredTechnologies);
-
-    }
-
-    private prepareRowsToExport(rows: any): any {
-
-        console.log('prepareRowsToExport developers', rows);
         return [];
-
-        // let allTechnologies: Array<Technology> = technologiesService.getItems();
-        //
-        // let exportRows: Array<ExcelRow<DeveloperTechnology>> = [];
-        // for (let developer of rows as Array<Developer>) {
-        //
-        //     developer.technologies = developer.technologies === undefined || developer.technologies === null ? [] : developer.technologies;
-        //
-        //     let technologiesRows: Array<DeveloperTechnology> = allTechnologies.map((technology: Technology) => {
-        //
-        //         return collectProperties(technology, ['category', 'name', 'theory', ['score', (_technology: Technology) => {
-        //
-        //             for (let tech of developer.technologies) {
-        //                 if (tech.key === technology.key) {
-        //                     return tech.score || Score.SCORE_NONE;
-        //                 }
-        //             }
-        //
-        //             return Score.SCORE_NONE;
-        //
-        //         }]]);
-        //
-        //     });
-        //
-        //     sortBy(technologiesRows, (developerTech: DeveloperTechnology) => {
-        //         return `${developerTech.category}/${developerTech.name}`
-        //     })
-        //
-        //
-        //     exportRows.push({
-        //         sheet: developer.fullName,
-        //         rows: technologiesRows
-        //     })
-        //
-        // }
-        //
-        // return exportRows;
-
-    }
-
-    private prepareRowsToImport  = (excelData: any): any => {
-
-        console.log('prepareRowsToImport developers', excelData);
-        return [];
-
-        // let rows: Array<Developer> = [];
-        // for (let row of excelData.importedRows) {
-        //
-        //     let developer: Developer = {
-        //         fullName: row['sheet'],
-        //         technologies: row['rows'] ? row['rows'].map((technology: DeveloperTechnologyExcelRow) => {
-        //
-        //             if (technology.score === Score.SCORE_NONE) {
-        //                 return null;
-        //             }
-        //
-        //             return {
-        //                 category: technology.category,
-        //                 name: technology.name,
-        //                 theory: technology.theory === 'YES',
-        //                 score: mapFromNumericScore(technology.score)
-        //             }
-        //
-        //         }).filter((t) => {
-        //             return t !== null;
-        //         }) : []
-        //     };
-        //
-        //     developer.technologies = technologiesService.regenerateKeys(developer.technologies as Array<Technology>) as Array<DeveloperTechnology>;
-        //     technologiesService.mergeNotExisting(developer.technologies);
-        //
-        //     rows.push(developer);
-        //
-        // }
-        //
-        // return developersService.regenerateKeys(rows);
-
-    }
-
-    private prepareSingleRowToExport = (item: any): any => {
-
-        console.log('prepareSingleRowToExport developers', item);
-        return [];
-
-        // let rows: Array<ExcelRow<Developer>> = this.prepareRowsToExport(this.state.developers);
-        //
-        // for (let row of rows) {
-        //     if (row.sheet === item['fullName']) {
-        //         return [row];
-        //     }
-        // }
-        //
-        // return [];
 
     }
 
@@ -216,16 +206,25 @@ export class Developers extends State<DevelopersProps, DevelopersState> {
         </React.Fragment>
     );
 
+    private renderTechnologyOption = (technology: Technology, setOptionValue: (technology: Technology, value: any) => void): JSX.Element => {
+
+        return <Dropdown className={isNotEmpty(technology.score) && technology.score !== Score.SCORE_NONE ? 'p-button-primary' : ''}
+                         value={technology.score} options={technology.theory ? this.theoryScores : this.markScores}
+                         onChange={(e) => setOptionValue(technology, e.value)} placeholder="Score"/>
+
+    }
+
     render(): JSX.Element {
         return <>
 
             <Table name="developers" rows={this.state.developers} cols={this.cols} extendable={this.props.extendable}
-                   onDataUpdate={this.onDataUpdate} customTemplates={this.customTemplates}
+                   dataService={developersService} customTemplates={this.customTemplates}
                    prepareRowsToExport={this.prepareRowsToExport} prepareRowsToImport={this.prepareRowsToImport}
                    prepareSingleRowToExport={this.prepareSingleRowToExport}/>
 
             <Dialog visible={this.state.showChooseTechnologyDialog} style={{width: '800px'}} header="Scoring" modal className="p-fluid" footer={this.chooseTechnologyDialogFooter} onHide={this.onHideChooseTechnologyDialog}>
-                <DeveloperTechnologies onSelect={this.onTechnologiesSelect} scoredTechnologies={this.state.row ? this.state.row.technologies : []}/>
+                <TechnologiesOptions onChange={this.onChange} technologies={this.state.row ? this.state.row.technologies : []}
+                                     optionValue={'score'} renderOption={this.renderTechnologyOption}/>
             </Dialog>
 
         </>;

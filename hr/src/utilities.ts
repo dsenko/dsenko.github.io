@@ -83,7 +83,7 @@ export const replaceInArray = (arr: Array<any>, item: any, key: string): Array<a
 
     for (let i = 0; i < arr.length; i++) {
 
-        if (arr[i][key] === item.key) {
+        if (arr[i][key] === item[key]) {
             arr[i] = item;
             break;
         }
@@ -93,7 +93,6 @@ export const replaceInArray = (arr: Array<any>, item: any, key: string): Array<a
     return arr;
 
 }
-
 
 export const sameAs = (obj1: any, obj2: any): boolean => {
 
@@ -108,22 +107,17 @@ export const sameAs = (obj1: any, obj2: any): boolean => {
     return JSON.stringify(obj1) === JSON.stringify(obj2);
 }
 
-export const uniqBy = (arr: Array<any>, key: string): Array<any> => {
-
-    console.log('uniq by ', JSON.stringify(arr));
+export const uniq = (arr: Array<any>): Array<any> => {
 
     let seen: Record<string, boolean> = {};
 
     return arr.filter(function (item) {
 
-        if (seen[item[key]] === true) {
-            console.log(seen);
+        if (seen[JSON.stringify(item)] === true) {
             return false;
         }
 
-        seen[item[key]] = true;
-
-        console.log(seen);
+        seen[JSON.stringify(item)] = true;
 
         return true;
 
@@ -169,7 +163,7 @@ export const isString = (obj: any): boolean => {
     return typeof obj === 'string' || obj instanceof String;
 }
 
-export const findInArray = (items: Array<any>, value: string, field: string): any => {
+export const findInArray = (items: Array<any>, value: string | number, field: string): any => {
 
     for (let item of items) {
         if (item[field] === value) {

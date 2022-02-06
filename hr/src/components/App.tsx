@@ -3,12 +3,11 @@ import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 import React from "react";
-import {Protect} from "./Protect";
 import {Technologies} from "./Technologies";
 import {MenuItem} from "primereact/menuitem";
 import {TabMenu} from "primereact/tabmenu";
 import {DefaultProps, DefaultState, State} from "../state";
-import { JobOffers } from './JobOffers';
+import {JobOffers} from './JobOffers';
 import {Developers} from "./Developers";
 import {Scoring} from "./Scoring";
 
@@ -29,28 +28,32 @@ export class App extends State<DefaultProps, AppState> {
         activeMenuIndex: 0
     }
 
-    private onActiveMenuItemIndexChange = (index: number) : void => {
+    private onActiveMenuItemIndexChange = (index: number): void => {
         this.setSingle('activeMenuIndex', index);
     }
 
-    private renderContent() : JSX.Element {
+    private renderContent(): JSX.Element {
 
-        switch (this.state.activeMenuIndex){
-            case 0: return <Scoring/>;
-            case 1: return <Developers extendable={true}/>;
-            case 2: return <JobOffers extendable={true}/>;
-            case 3: return <Technologies extendable={true}/>;
+        switch (this.state.activeMenuIndex) {
+            case 0:
+                return <Scoring/>;
+            case 1:
+                return <Developers extendable={true}/>;
+            case 2:
+                return <JobOffers extendable={true}/>;
+            case 3:
+                return <Technologies extendable={true}/>;
         }
 
     }
 
-    render() : JSX.Element {
-        return <Protect password="test" disable={true}>
+    render(): JSX.Element {
+        return <>
             <TabMenu model={this.menuItems} activeIndex={this.state.activeMenuIndex} onTabChange={(e) => this.onActiveMenuItemIndexChange(e.index)}/>
             <div className="pt-2">
                 {this.renderContent()}
             </div>
-        </Protect>
+        </>
     }
 
 }

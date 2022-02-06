@@ -1,4 +1,6 @@
 import {DataItem, DataService} from "./data-service";
+import {MenuItem} from "primereact/menuitem";
+import {Score} from "./developers-service";
 
 export enum YesNo {
     YES = 'YES',
@@ -24,22 +26,31 @@ export interface Technology extends DataItem {
     name?: string;
     theory?: YesNo | boolean;
     importance?: Importance;
+    score?: Score;
 }
 
 export class TechnologiesService extends DataService<Technology> {
 
-    mergeNotExisting(technologies: Array<Technology>): void {
+     getCategories(): Array<MenuItem> {
 
-        for (let technology of technologies) {
+        let categoriesSet: Set<string> = new Set();
 
-            if (this.getByKey(technology.key) === null) {
-                this.add(technology);
-            }
-
+        for (let technology of this.getItems()) {
+            categoriesSet.add(technology.category);
         }
+
+        let categoriesArr: Array<string> = Array.from(categoriesSet);
+        categoriesArr.unshift('Any');
+
+        return categoriesArr.map((category: string) => {
+            return {
+                label: category
+            }
+        });
 
     }
 
 }
 
 export const technologiesService = new TechnologiesService('technologies', ['category', 'name']);
+window['technologiesService'] = technologiesService;

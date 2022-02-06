@@ -22,11 +22,11 @@ body {
     border: 1px solid #e9ecef;
 }
 
-.field.type-3 {
+.field.type-2 {
     display: flex;
 }
 
-.field.type-3 > label {
+.field.type-2 > label {
     margin: 0;
 }
 

@@ -3,27 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@types/node": "^12.20.36",
-    "@types/react": "^17.0.34",
-    "@types/react-dom": "^17.0.11",
+    "@types/node": "12.20.36",
+    "@types/react": "17.0.34",
+    "@types/react-dom": "17.0.11",
     "file-saver": "2.0.5",
     "lodash.get": "4.4.2",
     "lodash.isfunction": "3.0.9",
     "lodash.set": "4.3.2",
-    "primeflex": "^3.1.0",
+    "primeflex": "3.1.0",
     "primeicons": "5.0.0",
     "primereact": "7.2.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
     "react-scripts": "5.0.0",
-    "react-transition-group": "^4.4.1",
-    "typescript": "^4.4.4",
+    "react-transition-group": "4.4.1",
+    "typescript": "4.4.4",
     "xlsx": "0.17.5"
   },
   "scripts": {
     "dev": "react-scripts start",
-    "build": "cross-env BUILD_PATH='../docs' react-scripts build",
-    "test": "mocha -r ts-node/register 'test/**/*.ts'"
+    "build": "cross-env BUILD_PATH='../docs' react-scripts build"
   },
   "eslintConfig": {
     "extends": [
@@ -43,11 +42,6 @@
     ]
   },
   "devDependencies": {
-    "@types/chai": "4.3.0",
-    "@types/mocha": "9.1.0",
-    "chai": "4.3.6",
-    "cross-env": "7.0.3",
-    "mocha": "9.2.0",
-    "ts-node": "10.4.0"
+    "cross-env": "7.0.3"
   }
 }

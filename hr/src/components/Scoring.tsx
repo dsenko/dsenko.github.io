@@ -1,7 +1,7 @@
 import React from "react";
 import {DefaultProps, DefaultState, State} from "../state";
 import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
-import {Developer, developersService, DeveloperTechnology, Score} from "../services/developers-service";
+import {Developer, developersService, Score} from "../services/developers-service";
 import {ExcelRow} from "../services/excel-service";
 import {JobOffer, jobOffersService} from "../services/job-offers-service";
 import {Importance, technologiesService, Technology} from "../services/technologies-service";
@@ -57,10 +57,6 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
     componentDidMount(): void {
 
-        this.setSingle('developers', developersService.getItems());
-        this.setSingle('jobOffers', jobOffersService.getItems());
-        this.prepareScores();
-
         developersService.on((items: Array<Developer>) => {
             this.setSingle('developers', items);
             this.prepareScores();
@@ -99,7 +95,7 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
     }
 
-    private calculateScore(jobOfferTechnologies: Array<Technology>, developerTechnologies: Array<DeveloperTechnology>) : string {
+    private calculateScore(jobOfferTechnologies: Array<Technology>, developerTechnologies: Array<Technology>) : string {
 
         let score: number = 0;
 
@@ -119,14 +115,14 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
             if(jobOfferTech.importance === Importance.MUST_HAVE || jobOfferTech.importance === Importance.NICE_TO_HAVE){
 
-                let developerTech: DeveloperTechnology = findInArray(developerTechnologies, jobOfferTech.key, 'key');
+                let developerTech: Technology = findInArray(developerTechnologies, jobOfferTech.key, 'key');
 
                 if(developerTech === null){
                     developerTech = {
                         category: jobOfferTech.category,
                         name: jobOfferTech.name,
                         score: Score.SCORE_NO
-                    } as DeveloperTechnology;
+                    };
                 }
 
                 switch (developerTech.score){
@@ -162,22 +158,22 @@ export class Scoring extends State<ScoringProps, ScoringState> {
 
     }
 
-    private prepareRowsToExport(rows: any): any {
+    private prepareRowsToExport(rows: Array<DeveloperScore>): Array<ExcelRow> {
 
-        // (rows as Array<DeveloperScore>).sort((a1, a2) => {
-        //     if (a1.developer < a2.developer) {
-        //         return -1;
-        //     }
-        //     if (a1.developer > a2.developer) {
-        //         return 1;
-        //     }
-        //     return 0;
-        // });
-        //
-        // return [{
-        //     sheet: 'Scoring',
-        //     rows: rows
-        // }];
+        (rows as Array<DeveloperScore>).sort((a1, a2) => {
+            if (a1.developer < a2.developer) {
+                return -1;
+            }
+            if (a1.developer > a2.developer) {
+                return 1;
+            }
+            return 0;
+        });
+
+        return [{
+            sheet: 'Scoring',
+            rows: rows
+        }];
 
     }
 

@@ -3,11 +3,7 @@ import {Technology} from "./technologies-service";
 
 export interface Developer extends DataItem {
     fullName: string;
-    technologies: Array<DeveloperTechnology>;
-}
-
-export interface DeveloperTechnology extends Technology {
-    score: Score;
+    technologies: Array<Technology>;
 }
 
 export enum Score {

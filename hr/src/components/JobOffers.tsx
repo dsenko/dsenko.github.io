@@ -4,12 +4,12 @@ import {Table, TableColumn, TableColumnType, TableRow} from "./Table";
 import {JobOffer, jobOffersService} from "../services/job-offers-service";
 import {Button} from "primereact/button";
 import {Dialog} from "primereact/dialog";
-import {Technologies} from "./Technologies";
-import {JobOfferTechnologies} from "./JobOfferTechnologies";
 import {boolToYesNo, Importance, technologiesService, Technology, YesNo, yesNoToBool} from "../services/technologies-service";
-import {collectProperties, copy, findInArray, isEmpty, isNotEmpty, isNull, replaceInArray, sortBy} from "../utilities";
+import {collectProperties, findInArray, isEmpty, isNotEmpty, sortBy} from "../utilities";
 import {ExcelData, ExcelRow} from "../services/excel-service";
-import * as Util from "util";
+import {MenuItem} from "primereact/menuitem";
+import {Dropdown} from "primereact/dropdown";
+import {TechnologiesOptions} from "./TechnologiesOptions";
 
 interface JobOffersProps extends DefaultProps {
     extendable: boolean;
@@ -18,11 +18,16 @@ interface JobOffersProps extends DefaultProps {
 interface JobOffersState extends DefaultState {
     jobOffers: Array<JobOffer>;
     row: JobOffer;
-    selectedTechnologies: Array<Technology>;
     showChooseTechnologyDialog: boolean;
 }
 
 export class JobOffers extends State<JobOffersProps, JobOffersState> {
+
+    private readonly importances: Array<MenuItem> = [
+        {label: 'Not applicable', value: 'NOT_APPLICABLE'},
+        {label: 'Must have', value: 'MUST_HAVE'},
+        {label: 'Nice to have', value: 'NICE_TO_HAVE'}
+    ]
 
     private cols: Array<TableColumn> = [
         {
@@ -45,26 +50,26 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
     state: JobOffersState = {
         jobOffers: [],
         row: null,
-        selectedTechnologies: [],
         showChooseTechnologyDialog: false
     }
 
     componentDidMount(): void {
+        jobOffersService.on(this.onJobOffersUpdate);
+    }
 
-        this.setSingle('jobOffers', jobOffersService.getItems());
-        jobOffersService.on((items: Array<JobOffer>) => {
-            console.log('getting updated', items);
-            this.setSingle('jobOffers', items);
-        });
+    componentWillUnmount() {
+        jobOffersService.off(this.onJobOffersUpdate);
+    }
 
+    private onJobOffersUpdate = (items: Array<JobOffer>): void => {
+        this.setSingle('jobOffers', items);
     }
 
     private openChooseTechnologyDialog = (row: JobOffer): void => {
 
         this.setMany({
             showChooseTechnologyDialog: true,
-            row: row,
-            selectedTechnologies: copy(row.technologies)
+            row: row
         });
 
     }
@@ -73,60 +78,45 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
         this.setMany({
             showChooseTechnologyDialog: false,
-            row: null,
-            selectedTechnologies: []
+            row: null
         });
 
     }
 
     private onSubmitChooseTechnology = (): void => {
-        this.state.row.technologies = this.state.selectedTechnologies;
-        this.state.jobOffers = replaceInArray(this.state.jobOffers, this.state.row, 'key');
-        jobOffersService.replaceItems(this.state.jobOffers);
+        jobOffersService.replace(this.state.row);
         this.onHideChooseTechnologyDialog();
     }
 
-    onDataUpdate = (items: Array<TableRow>): void => {
-        console.log('onDataUpdate replacing', items);
-        jobOffersService.replaceItems(items as Array<JobOffer>);
+    private onChange = (items: Array<Technology>): void => {
+        this.state.row.technologies = items;
+        this.setSelf('row');
     }
-
-    private onTechnologiesSelect = (items: Array<Technology>): void => {
-
-        let selectedTechnologies: Array<Technology> = [];
-        for (let technology of items) {
-            if (isNotEmpty(technology.importance)) {
-                selectedTechnologies.push(technology);
-            }
-        }
-
-        this.setSingle('selectedTechnologies', selectedTechnologies);
-
-    }
-
 
     private prepareRowsToExport(rows: Array<JobOffer>): Array<ExcelRow> {
 
         let allTechnologies: Array<Technology> = technologiesService.getItems();
 
         let exportRows: Array<ExcelRow> = [];
+        for (let jobOffer of rows) {
 
-        for (let jobOffer of rows as Array<JobOffer>) {
+            if (isEmpty(jobOffer.technologies)) {
+                jobOffer.technologies = [];
+            }
 
             let technologiesRows: Array<Technology> = allTechnologies.map((technology: Technology) => {
-
-                let jobOfferTech: Technology = findInArray(jobOffer.technologies, technology.key, 'key');
 
                 return collectProperties(technology, ['category', 'name', ['theory', (theory: boolean) => {
                     return boolToYesNo(theory);
                 }], ['importance', () => {
-                    return isNull(jobOfferTech) ? Importance.NOT_APPLICABLE : jobOfferTech.importance
-                }]])
+                    let jobOfferTech: Technology = findInArray(jobOffer.technologies, technology.key, 'key') || {};
+                    return jobOfferTech.importance || Importance.NOT_APPLICABLE;
+                }]]);
 
             });
 
-            sortBy(technologiesRows, (a: Technology) => {
-                return `${a.category}/${a.name}`
+            sortBy(technologiesRows, (developerTech: Technology) => {
+                return `${developerTech.category}/${developerTech.name}`
             });
 
             exportRows.push({
@@ -142,62 +132,45 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
 
     private prepareRowsToImport = (excelData: ExcelData): Array<JobOffer> => {
 
-        console.log('prepareRowsToImport joboffers', excelData);
-
         let rows: Array<JobOffer> = [];
-        for(let row of excelData.importedRows){
+        for (let row of excelData.importedRows) {
 
             let jobOffer: JobOffer = {
                 name: row['sheet'],
                 technologies: row['rows'] ? row['rows'].map((technology: Technology) => {
 
-                        if(technology.importance !== Importance.NOT_APPLICABLE){
-                            return collectProperties(technology, ['category', 'name', ['theory', (theory: YesNo) => {
-                                return yesNoToBool(theory);
-                            }], 'importance']);
-                        }
+                    return collectProperties(technology, ['category', 'name', ['theory', (theory: YesNo) => {
+                        return yesNoToBool(theory);
+                    }], 'importance']);
 
-                        return null;
-
-                }).filter((t) => { return t !== null; }) : []
+                }) : []
             };
 
-            jobOffer.technologies = technologiesService.regenerateKeys(jobOffer.technologies);
-            technologiesService.mergeNotExisting(jobOffer.technologies);
+            jobOffer.technologies = technologiesService.supplyWithKeys(jobOffer.technologies);
+
+            technologiesService.mergeItems(jobOffer.technologies.map((technology: Technology) => {
+                return collectProperties(technology, ['category', 'name', 'theory']);
+            }));
 
             rows.push(jobOffer);
 
         }
 
-        let re = jobOffersService.regenerateKeys(rows);
-
-        console.log('re', JSON.stringify(re));
-        console.log(this.state.jobOffers);
-
-        return re;
+        return rows;
 
     }
 
-    private prepareSingleRowToExport = (item: any): any => {
+    private prepareSingleRowToExport = (item: JobOffer): Array<ExcelRow> => {
 
-        /*
-        input structure = JobOffer
-        output structure [{sheet: 'offer', rows: [Technology] }]
-         */
+        let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.jobOffers);
 
-        console.log('prepareSingleRowToExport joboffers', item);
+        for (let row of rows) {
+            if (row.sheet === item['name']) {
+                return [row];
+            }
+        }
+
         return [];
-
-        //
-        // let rows: Array<ExcelRow> = this.prepareRowsToExport(this.state.jobOffers);
-        //
-        // for(let row of rows){
-        //     if(row.sheet === item['name']){
-        //         return [row];
-        //     }
-        // }
-        //
-        // return [];
 
     }
 
@@ -216,16 +189,27 @@ export class JobOffers extends State<JobOffersProps, JobOffersState> {
         </React.Fragment>
     );
 
+    private renderTechnologyOption = (technology: Technology, setOptionValue: (technology: Technology, value: any) => void): JSX.Element => {
+
+        return <Dropdown className={isNotEmpty(technology.importance) && technology.importance !== Importance.NOT_APPLICABLE ? 'p-button-primary' : ''}
+                         value={technology.importance} options={this.importances}
+                         onChange={(e) => setOptionValue(technology, e.value)}
+                         placeholder="Importance"/>
+
+    }
+
+
     render(): JSX.Element {
         return <>
 
             <Table name="job-offers" rows={this.state.jobOffers} cols={this.cols} extendable={this.props.extendable}
-                   onDataUpdate={this.onDataUpdate} customTemplates={this.customTemplates}
+                   dataService={jobOffersService} customTemplates={this.customTemplates}
                    prepareRowsToExport={this.prepareRowsToExport} prepareRowsToImport={this.prepareRowsToImport}
                    prepareSingleRowToExport={this.prepareSingleRowToExport}/>
 
             <Dialog visible={this.state.showChooseTechnologyDialog} style={{width: '800px'}} header="Choosing technologies" modal className="p-fluid" footer={this.chooseTechnologyDialogFooter} onHide={this.onHideChooseTechnologyDialog}>
-                <JobOfferTechnologies onSelect={this.onTechnologiesSelect} selectedTechnologies={this.state.row ? this.state.row.technologies : []}/>
+                <TechnologiesOptions onChange={this.onChange} technologies={this.state.row ? this.state.row.technologies : []}
+                                     renderOption={this.renderTechnologyOption} optionValue={'importance'}/>
             </Dialog>
         </>;
     }

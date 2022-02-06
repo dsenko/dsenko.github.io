@@ -58,20 +58,15 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
     }
 
     componentDidMount(): void {
-        this.setSingle('technologies', technologiesService.getItems());
-        technologiesService.on(this.updateTechnologies);
+        technologiesService.on(this.onUpdateTechnologies);
     }
 
     componentWillUnmount() {
-        technologiesService.off(this.updateTechnologies);
+        technologiesService.off(this.onUpdateTechnologies);
     }
 
-    private updateTechnologies = (items: Array<Technology>) => {
+    private onUpdateTechnologies = (items: Array<Technology>) => {
         this.setSingle('technologies', items);
-    }
-
-    private onDataUpdate = (items: Array<Technology>): void => {
-        technologiesService.replaceItems(items);
     }
 
     private prepareRowsToExport(rows: Array<Technology>): Array<ExcelRow> {
@@ -100,7 +95,7 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
             }]]));
         }
 
-        return technologiesService.regenerateKeys(rows);
+        return rows;
 
     }
 
@@ -110,7 +105,7 @@ export class Technologies extends State<TechnologiesProps, TechnologiesState> {
                       cols={this.state.cols}
                       extendable={this.props.extendable}
                       customTemplates={this.customTemplates}
-                      onDataUpdate={this.onDataUpdate}
+                      dataService={technologiesService}
                       prepareRowsToExport={this.prepareRowsToExport}
                       prepareRowsToImport={this.prepareRowsToImport}/>;
     }
